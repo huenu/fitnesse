@@ -34,17 +34,19 @@ public class PageTOCWidgetTest extends WidgetTestCase{
 		try {
 			
 			PageTOCWidget toc= new PageTOCWidget(this.widgetRoot(pageContents.toString()), "");
+			
 			String render = unformattedText(toc);
 			assertContains("<div class=\"toc1\">", render);
 			assertContains("<div class=\"contents\">", render);
 			assertContains("<b>Index:</b>", render);
 			assertContains("<div class=\"toc1\">", render);
 			
-			assertContains("<ul><li><a href=\"#Main title\">Main title</a></li><ul><li><a href=\"#Firt subtitle\">Firt subtitle</a></li><li><a href=\"#Second subtitle\">Second subtitle</a></li></ul></ul>", render);
+			
+			assertContains("<ul><li><a href=\"#Main_title\">Main title</a></li><ul><li><a href=\"#Firt_subtitle\">Firt subtitle</a></li><li><a href=\"#Second_subtitle\">Second subtitle</a></li></ul></ul>", render);
 						
-			assertRef("Main title", toc.render());
-			assertRef("Firt subtitle", toc.render());
-			assertRef("Second subtitle", toc.render());
+			assertRef("Main_title","Main title", toc.render());
+			assertRef("Firt_subtitle","Firt subtitle",toc.render());
+			assertRef("Second_subtitle","Second subtitle",toc.render());
 			
 		} catch (Exception e) {
 			fail(e.getMessage());
@@ -54,17 +56,17 @@ public class PageTOCWidgetTest extends WidgetTestCase{
 
 	public void testFromSecondLevel(){		
 		StringBuffer pageContents = new StringBuffer();
-		pageContents.append("!2 Firt subtitle\n");
+		pageContents.append("!2 First subtitle\n");
 		pageContents.append("!2 Second subtitle\n");		
 				
 		try {			
 			PageTOCWidget toc= new PageTOCWidget(this.widgetRoot(pageContents.toString()), "");
 			String render = unformattedText(toc);
 			assertContains("<div class=\"contents\">", render);
-			assertContains("<ul><li><a href=\"#Firt subtitle\">Firt subtitle</a></li><li><a href=\"#Second subtitle\">Second subtitle</a></li></ul>", render);
+			assertContains("<ul><li><a href=\"#First_subtitle\">First subtitle</a></li><li><a href=\"#Second_subtitle\">Second subtitle</a></li></ul>", render);
 			
-			assertRef("Firt subtitle", toc.render());
-			assertRef("Second subtitle", toc.render());
+			assertRef("First_subtitle","First subtitle", toc.render());
+			assertRef("Second_subtitle","Second subtitle", toc.render());
 			
 		} catch (Exception e) {
 			fail(e.getMessage());
@@ -88,11 +90,11 @@ public class PageTOCWidgetTest extends WidgetTestCase{
 			
 			StringBuffer listSTR= new StringBuffer();
 			listSTR.append("<ul>");
-			listSTR.append("<li><a href=\"#Section A\">Section A</a></li>");
+			listSTR.append("<li><a href=\"#Section_A\">Section A</a></li>");
 			listSTR.append("<ul>");
-			listSTR.append("<li><a href=\"#Section A.A\">Section A.A</a></li>");
+			listSTR.append("<li><a href=\"#Section_A.A\">Section A.A</a></li>");
 			listSTR.append("<ul>");
-			listSTR.append("<li><a href=\"#Section A.A.A\">Section A.A.A</a></li>");
+			listSTR.append("<li><a href=\"#Section_A.A.A\">Section A.A.A</a></li>");
 			listSTR.append("</ul>");
 			listSTR.append("</ul>");
 			listSTR.append("</ul>");
@@ -108,8 +110,8 @@ public class PageTOCWidgetTest extends WidgetTestCase{
 		assertTrue("Expected substring \""+expectedSubstring+"\" not found in \""+actual+"\".", actual.contains(expectedSubstring));
 	}
 
-	private void assertRef(String linkText, String content) {
-		String expected="<a href=\"#"+linkText+"\">"+linkText+"</a>";
+	private void assertRef(String linkText, String Name,String content) {
+		String expected="<a href=\"#"+linkText+"\">"+Name+"</a>";
 		assertTrue("Expected link \""+linkText+"\" not found in \""+content+"\".", content.contains(expected));
 	}
 	

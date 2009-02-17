@@ -84,8 +84,14 @@ class HeaderParser {
 		HtmlTag listItem = new HtmlTag("li");
 		int idxStop = (header.indexOf('\n')<0)?header.length():header.indexOf('\n');
 		String headerTitle = header.substring(0,idxStop).trim();
-		HtmlTag link = HtmlUtil.makeLink("#"+headerTitle, headerTitle);
-		listItem.add(link);
+		try {
+			HtmlTag link = HtmlUtil.makeLink("#"+HeaderWidget.anchorName(headerTitle),headerTitle);
+			listItem.add(link);
+		} catch (Exception e) {
+			//The link cannot be build
+			listItem.add(headerTitle);
+		}		
 		return listItem;
 	}
 }
+
