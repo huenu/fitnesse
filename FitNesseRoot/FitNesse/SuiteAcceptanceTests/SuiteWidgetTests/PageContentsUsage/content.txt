@@ -1,0 +1,2 @@
+Use !pagecontents to build a navigable table of contents based upon the page's titles hierarchy.
+{{{Example:  !pagecontents }}}
