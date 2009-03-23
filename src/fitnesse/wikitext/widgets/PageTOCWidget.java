@@ -11,7 +11,7 @@ import fitnesse.wikitext.WikiWidget;
 * @author huenu
 * */
 public class PageTOCWidget extends WikiWidget {
-  public static final String REGEXP = "(?:^!pagecontents)";
+  public static final String REGEXP = "(?:^!pagecontents([ \t]+-R[0-9]*)?([ \t]+-[fhgp])*?[ \\t]*$)";
   
   public PageTOCWidget(ParentWidget parent, String text)
   {
@@ -23,8 +23,7 @@ public class PageTOCWidget extends WikiWidget {
     HtmlTag div = HtmlUtil.makeDivTag("toc1");
     HtmlTag contentsDiv = HtmlUtil.makeDivTag("contents");
     contentsDiv.add(HtmlUtil.makeBold("Index:"));
-    HtmlTag toc = buildIndexContents(getWikiPage());
-    if(toc!=null)  contentsDiv.add(toc);
+    contentsDiv.add(buildIndexContents(getWikiPage()));
     div.add(contentsDiv);
     return div.html();
   }
@@ -45,7 +44,7 @@ class HeaderParser {
   public HtmlTag parse(String content){
     int level=1;
     HtmlTag htmlT = processLevel(1,content);    
-    while(htmlT==null && level<4){
+    while(htmlT==null){
       htmlT = processLevel(level++,content);
     }
     return htmlT;

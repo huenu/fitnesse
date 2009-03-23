@@ -21,38 +21,6 @@ public class PageTOCWidgetTest extends WidgetTestCase {
 				content), new WikiPagePath()), WidgetBuilder.htmlWidgetBuilder);
 	}
 
-	public void testEmptyPage() {
-		StringBuffer pageContents = new StringBuffer();
-		try {
-			PageTOCWidget toc = new PageTOCWidget(this.widgetRoot(pageContents
-					.toString()), "");
-
-			String render = unformattedText(toc);
-			assertContains("<div class=\"toc1\">", render);
-			assertContains("<div class=\"contents\">", render);
-			assertContains("<b>Index:</b>", render);
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
-	}
-	
-
-	public void testPageWithSimpleText() {
-		StringBuffer pageContents = new StringBuffer("This page has only '''simple''' text");
-		try {
-			PageTOCWidget toc = new PageTOCWidget(this.widgetRoot(pageContents
-					.toString()), "");
-
-			String render = unformattedText(toc);
-			assertContains("<div class=\"toc1\">", render);
-			assertContains("<div class=\"contents\">", render);
-			assertContains("<b>Index:</b>", render);
-		} catch (Exception e) {
-			fail(e.getMessage());
-		}
-	}
-	
-
 	public void testFromMainLevel() {
 		StringBuffer pageContents = new StringBuffer();
 		pageContents.append("!1 Main title\n");
@@ -68,6 +36,7 @@ public class PageTOCWidgetTest extends WidgetTestCase {
 			assertContains("<div class=\"toc1\">", render);
 			assertContains("<div class=\"contents\">", render);
 			assertContains("<b>Index:</b>", render);
+			assertContains("<div class=\"toc1\">", render);
 
 			assertContains(
 					"<ul><li><a href=\"#Main_title\">Main title</a></li><ul><li><a href=\"#Firt_subtitle\">Firt subtitle</a></li><li><a href=\"#Second_subtitle\">Second subtitle</a></li></ul></ul>",
