@@ -2,11 +2,12 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.slimTables;
 
-import org.htmlparser.util.ParserException;
 import static org.junit.Assert.assertEquals;
-import org.junit.Test;
 
 import java.util.Arrays;
+
+import org.htmlparser.util.ParserException;
+import org.junit.Test;
 
 public class HtmlTableScannerTest {
   private HtmlTableScanner ts;
@@ -145,7 +146,7 @@ public class HtmlTableScannerTest {
 
   @Test
   public void canConvertGunkBackToHtml() throws Exception {
-    String html = "<body>gunk<table>gunk<tr>gunk<td>x</td>gunk<br>gunk</tr>gunk</table>gunk</body>";
+    String html = "gunk<body>gunk<table>gunk<tr>gunk<td>x</td>gunk<br>gunk</tr>gunk</table>gunk</body>";
     scan(html);
     assertEquals(ts.toHtml(), html);
   }

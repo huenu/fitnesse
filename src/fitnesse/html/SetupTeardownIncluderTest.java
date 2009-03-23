@@ -2,8 +2,12 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.html;
 
-import fitnesse.testutil.RegexTestCase;
-import fitnesse.wiki.*;
+import util.RegexTestCase;
+import fitnesse.wiki.InMemoryPage;
+import fitnesse.wiki.PageCrawler;
+import fitnesse.wiki.PageData;
+import fitnesse.wiki.PathParser;
+import fitnesse.wiki.WikiPage;
 
 public class SetupTeardownIncluderTest extends RegexTestCase {
   private PageData pageData;
@@ -12,8 +16,8 @@ public class SetupTeardownIncluderTest extends RegexTestCase {
     WikiPage root = InMemoryPage.makeRoot("RooT");
     PageCrawler crawler = root.getPageCrawler();
     WikiPage page = crawler.addPage(root,
-      PathParser.parse("TestPage"),
-      "the content"
+        PathParser.parse("TestPage"),
+        "the content"
     );
     crawler.addPage(root, PathParser.parse("SetUp"), "setup");
     crawler.addPage(root, PathParser.parse("TearDown"), "teardown");
@@ -23,7 +27,7 @@ public class SetupTeardownIncluderTest extends RegexTestCase {
   }
 
   public void testIncludeSetupTearDownOutsideOfSuite()
-    throws Exception {
+  throws Exception {
     SetupTeardownIncluder.includeInto(pageData);
     String html = pageData.getHtml();
     assertSubString(".SetUp", html);
@@ -31,7 +35,7 @@ public class SetupTeardownIncluderTest extends RegexTestCase {
     assertSubString(".TearDown", html);
     assertSubString("teardown", html);
     assertSubString("the content", html);
-    assertSubString("class=\"collapsable\"", html);
+    assertSubString("class=\"hidden\"", html);
     assertNotSubString(".SuiteSetUp", html);
     assertNotSubString("suiteSetUp", html);
     assertNotSubString(".SuiteTearDown", html);
@@ -46,7 +50,7 @@ public class SetupTeardownIncluderTest extends RegexTestCase {
     assertSubString(".TearDown", html);
     assertSubString("teardown", html);
     assertSubString("the content", html);
-    assertSubString("class=\"collapsable\"", html);
+    assertSubString("class=\"hidden\"", html);
     assertSubString(".SuiteSetUp", html);
     assertSubString("suiteSetUp", html);
     assertSubString(".SuiteTearDown", html);

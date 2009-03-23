@@ -2,16 +2,21 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse;
 
+import java.util.regex.Pattern;
+
+import util.RegexTestCase;
 import fitnesse.components.LogData;
 import fitnesse.http.MockRequest;
 import fitnesse.http.SimpleResponse;
 import fitnesse.responders.ResponderFactory;
 import fitnesse.responders.files.SampleFileUtility;
 import fitnesse.testutil.MockSocket;
-import fitnesse.testutil.RegexTestCase;
-import fitnesse.wiki.*;
-
-import java.util.regex.Pattern;
+import fitnesse.wiki.InMemoryPage;
+import fitnesse.wiki.PageCrawler;
+import fitnesse.wiki.PathParser;
+import fitnesse.wiki.WikiPage;
+import fitnesse.wiki.WikiPageDummy;
+import fitnesse.wiki.WikiPagePath;
 
 public class FitNesseServerTest extends RegexTestCase {
   private PageCrawler crawler;
@@ -53,13 +58,6 @@ public class FitNesseServerTest extends RegexTestCase {
 
     assertSubString("400 Bad Request", output);
     assertSubString("The request string is malformed and can not be parsed", output);
-  }
-
-  public void testFrontPageRequest() throws Exception {
-    crawler.addPage(root, PathParser.parse("FrontPage"), "This is the FrontPage content");
-    String output = getSocketOutput("GET / HTTP/1.1\r\n\r\n", root);
-    String expected = "This is the .* content";
-    assertTrue("Should have content", hasSubString(expected, output));
   }
 
   public void testSomeOtherPage() throws Exception {

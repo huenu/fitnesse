@@ -2,30 +2,55 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.responders;
 
+import static fitnesse.revisioncontrol.RevisionControlOperation.ADD;
+import static fitnesse.revisioncontrol.RevisionControlOperation.CHECKIN;
+import static fitnesse.revisioncontrol.RevisionControlOperation.CHECKOUT;
+import static fitnesse.revisioncontrol.RevisionControlOperation.DELETE;
+import static fitnesse.revisioncontrol.RevisionControlOperation.REVERT;
+import static fitnesse.revisioncontrol.RevisionControlOperation.SYNC;
+import static fitnesse.revisioncontrol.RevisionControlOperation.UPDATE;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+
+import util.StringUtil;
 import fitnesse.Responder;
 import fitnesse.http.Request;
-import fitnesse.responders.editing.*;
-import fitnesse.responders.files.*;
+import fitnesse.responders.editing.EditResponder;
+import fitnesse.responders.editing.PropertiesResponder;
+import fitnesse.responders.editing.SavePropertiesResponder;
+import fitnesse.responders.editing.SaveResponder;
+import fitnesse.responders.editing.SymbolicLinkResponder;
+import fitnesse.responders.files.CreateDirectoryResponder;
+import fitnesse.responders.files.DeleteConfirmationResponder;
+import fitnesse.responders.files.DeleteFileResponder;
+import fitnesse.responders.files.FileResponder;
+import fitnesse.responders.files.RenameFileConfirmationResponder;
+import fitnesse.responders.files.RenameFileResponder;
+import fitnesse.responders.files.UploadResponder;
 import fitnesse.responders.refactoring.DeletePageResponder;
 import fitnesse.responders.refactoring.MovePageResponder;
 import fitnesse.responders.refactoring.RefactorPageResponder;
 import fitnesse.responders.refactoring.RenamePageResponder;
-import fitnesse.responders.revisioncontrol.*;
+import fitnesse.responders.revisioncontrol.AddResponder;
+import fitnesse.responders.revisioncontrol.CheckinResponder;
+import fitnesse.responders.revisioncontrol.CheckoutResponder;
+import fitnesse.responders.revisioncontrol.DeleteResponder;
+import fitnesse.responders.revisioncontrol.RevertResponder;
+import fitnesse.responders.revisioncontrol.SyncResponder;
+import fitnesse.responders.revisioncontrol.UpdateResponder;
 import fitnesse.responders.run.*;
+import fitnesse.responders.search.ExecuteSearchPropertiesResponder;
 import fitnesse.responders.search.SearchFormResponder;
 import fitnesse.responders.search.SearchResponder;
 import fitnesse.responders.search.WhereUsedResponder;
 import fitnesse.responders.versions.RollbackResponder;
 import fitnesse.responders.versions.VersionResponder;
 import fitnesse.responders.versions.VersionSelectionResponder;
-import static fitnesse.revisioncontrol.RevisionControlOperation.*;
 import fitnesse.wiki.WikiPage;
 import fitnesse.wikitext.widgets.WikiWordWidget;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ResponderFactory {
   private final String rootPath;
@@ -39,6 +64,7 @@ public class ResponderFactory {
     addResponder("saveData", SaveResponder.class);
     addResponder("search", SearchResponder.class);
     addResponder("searchForm", SearchFormResponder.class);
+    addResponder("stoptest", StopTestResponder.class);
     addResponder("test", TestResponder.class);
     addResponder("suite", SuiteResponder.class);
     addResponder("proxy", SerializedPageResponder.class);
@@ -48,6 +74,7 @@ public class ResponderFactory {
     addResponder("names", NameWikiPageResponder.class);
     addResponder("properties", PropertiesResponder.class);
     addResponder("saveProperties", SavePropertiesResponder.class);
+    addResponder("executeSearchProperties", ExecuteSearchPropertiesResponder.class);
     addResponder("whereUsed", WhereUsedResponder.class);
     addResponder("refactor", RefactorPageResponder.class);
     addResponder("deletePage", DeletePageResponder.class);
@@ -71,6 +98,7 @@ public class ResponderFactory {
     addResponder("symlink", SymbolicLinkResponder.class);
     addResponder("importAndView", ImportAndViewResponder.class);
     addResponder("getPage", WikiPageResponder.class);
+    addResponder("packet", PacketResponder.class);
     addRespondersForRevisionControlOperations();
   }
 
@@ -95,20 +123,23 @@ public class ResponderFactory {
     else
       fullQuery = request.getQueryString();
 
-    int argStart = fullQuery == null ? -1 : fullQuery.indexOf('&');
+    if (fullQuery == null)
+      return null;
+
+    int argStart = fullQuery.indexOf('&');
     return (argStart <= 0) ? fullQuery : fullQuery.substring(0, argStart);
   }
 
   public Responder makeResponder(Request request, WikiPage root) throws Exception {
     Responder responder = new DefaultResponder();
     String resource = request.getResource();
-    if ("".equals(resource))
-      resource = "FrontPage";
     String responderKey = getResponderKey(request);
     if (usingResponderKey(responderKey))
       responder = lookupResponder(responderKey, responder);
     else {
-      if (resource.startsWith("files/") || resource.equals("files"))
+      if (StringUtil.isBlank(resource))
+        responder = new WikiPageResponder();
+      else if (resource.startsWith("files/") || resource.equals("files"))
         responder = FileResponder.makeResponder(request, rootPath);
       else if (WikiWordWidget.isWikiWord(resource) || "root".equals(resource))
         responder = new WikiPageResponder();
@@ -125,11 +156,11 @@ public class ResponderFactory {
     Class<?> responderClass = getResponderClass(responderKey);
     if (responderClass != null) {
       try {
-        Constructor<?> constructor = responderClass.getConstructor(new Class<?>[]{String.class});
-        responder = (Responder) constructor.newInstance(new Object[]{rootPath});
+        Constructor<?> constructor = responderClass.getConstructor(String.class);
+        responder = (Responder) constructor.newInstance(rootPath);
       } catch (NoSuchMethodException e) {
-        Constructor<?> constructor = responderClass.getConstructor(new Class<?>[0]);
-        responder = (Responder) constructor.newInstance(new Object[0]);
+        Constructor<?> constructor = responderClass.getConstructor();
+        responder = (Responder) constructor.newInstance();
       }
     }
     return responder;

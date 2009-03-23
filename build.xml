@@ -11,15 +11,6 @@
   <property name="fitnesseRootZip" value="FitNesseRoot.zip"/>
   <property name="zipDir" location="dist/fitnesse"/>
   <property name="results.dir" location="test-results"/>
-  <property name="CRAP4J_HOME" value="crap4j"/>
-
-  <taskdef name="crap4j" classname="org.crap4j.anttask.Crap4jAntTask">
-    <classpath>
-      <fileset dir="${CRAP4J_HOME}/lib">
-        <include name="**/*.jar"/>
-      </fileset>
-    </classpath>
-  </taskdef>
 
   <path id="classpath">
     <pathelement path="classes"/>
@@ -37,7 +28,7 @@
   <target name="testbuild" depends="clean, unit_test, execute_fitnesse_tests"
           description="builds code from scratch, runs all the unit tests and acceptance tests"/>
 
-  <target name="build_distribution" depends="zip_src, zip_bin"
+  <target name="build_distribution" depends="zip_bin"
           description="The thing you do when distributing a new release."/>
 
   <target name="assemble_bin" depends="clean_dist, jar, copy_distribution"
@@ -71,23 +62,6 @@
     <zip zipfile="fitnesse${DSTAMP}.zip" basedir="dist" includes="fitnesse/**" excludes="**/Thumbs.db"/>
   </target>
 
-  <target name="zip_src" depends="clean_dist" description="Packages all the source into a .zip file">
-    <tstamp/>
-    <zip zipfile="fitnesse_src${DSTAMP}.zip">
-      <fileset dir=".">
-        <include name="src/**"/>
-        <include name="srcFitServerTests/**"/>
-        <include name="lib/**"/>
-        <include name="extra/**"/>
-        <include name="build.xml"/>
-        <include name="dotnet/**"/>
-        <include name="BUILD_README.txt"/>
-        <include name="templates/**"/>
-        <exclude name="**/fitnesse*.zip"/>
-      </fileset>
-    </zip>
-  </target>
-
   <target name="jar" depends="build, copyResources" description="generate the jar file">
     <mkdir dir="dist"/>
     <delete file="dist/fitnesse.jar"/>
@@ -100,7 +74,7 @@
       <include name="tasks.properties"/>
       <manifest>
         <attribute name="Built-By" value="Object Mentor, Inc."/>
-        <attribute name="Main-Class" value="fitnesse.FitNesse"/>
+        <attribute name="Main-Class" value="fitnesseMain.FitNesseMain"/>
         <attribute name="Class-Path" value="lib/htmlparser.jar lib/json.jar"/>
       </manifest>
     </jar>
@@ -159,6 +133,7 @@
         <fileset dir="src">
           <include name="**/*Test.java"/>
           <exclude name="**/ShutdownResponderTest.java"/>
+          <exclude name="**/QueryTableBaseTest.java"/>
         </fileset>
       </batchtest>
     </junit>

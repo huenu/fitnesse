@@ -2,9 +2,9 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.runner;
 
+import util.RegexTestCase;
+import util.StreamReader;
 import fitnesse.responders.run.TestSummary;
-import fitnesse.testutil.RegexTestCase;
-import fitnesse.util.StreamReader;
 
 public class CachingResultFormatterTest extends RegexTestCase {
   public void testAddResult() throws Exception {

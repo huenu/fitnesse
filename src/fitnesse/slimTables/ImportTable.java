@@ -2,11 +2,12 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.slimTables;
 
-import static fitnesse.util.ListUtility.list;
-import fitnesse.responders.run.slimResponder.SlimTestContext;
+import static util.ListUtility.list;
 
 import java.util.List;
 import java.util.Map;
+
+import fitnesse.responders.run.slimResponder.SlimTestContext;
 
 public class ImportTable extends SlimTable {
   public ImportTable(Table table, String id, SlimTestContext testContext) {

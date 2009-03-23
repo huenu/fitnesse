@@ -1,7 +1,9 @@
 FitNesseRoot/JunkParent/*
+FitNesseRoot/JunkPage/*
 FitNesseRoot/ProjectPage/*
 FitNesseRoot/ErrorLogs/*
 test-results/
+jsunit/
 agitar/
 dist/
 classes/

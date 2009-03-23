@@ -2,8 +2,8 @@
 // Released under the terms of the GNU General Public License version 2 or later.
 package fitnesse;
 
-class FitNesseVersion {
+public class FitNesseVersion {
 	public String toString() {
-		return "v20090204";
+		return "v20090321";
 	}
 }

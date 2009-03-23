@@ -2,15 +2,22 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.slimTables;
 
-import fitnesse.util.ListUtility;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import util.ListUtility;
 import fitnesse.responders.run.slimResponder.SlimTestContext;
 
-import java.util.*;
-
 public class QueryTable extends SlimTable {
-  private List<String> fieldNames = new ArrayList<String>();
+  protected List<String> fieldNames = new ArrayList<String>();
   private String queryId;
-  private QueryResults queryResults;
+  protected QueryResults queryResults;
+  private String tableInstruction;
 
   public QueryTable(Table table, String id, SlimTestContext testContext) {
     super(table, id, testContext);
@@ -25,7 +32,14 @@ public class QueryTable extends SlimTable {
       throw new SlimTable.SyntaxError("Query tables must have at least two rows.");
     assignColumns();
     constructFixture();
+    tableInstruction = callFunction(getTableName(), "table", tableAsList());
     queryId = callFunction(getTableName(), "query");
+  }
+
+  public boolean shouldIgnoreException(String resultKey, String resultString) {
+    boolean isTableInstruction = resultKey.equals(tableInstruction);
+    boolean isNoMethodException = resultString.indexOf("NO_METHOD_IN_CLASS") != -1;
+    return isTableInstruction && isNoMethodException;
   }
 
   private void assignColumns() {
@@ -76,7 +90,7 @@ public class QueryTable extends SlimTable {
     }
   }
 
-  private void scanRowForMatch(int tableRow) throws Exception {
+  protected void scanRowForMatch(int tableRow) throws Exception {
     int matchedRow = queryResults.findBestMatch(tableRow);
     if (matchedRow == -1) {
       replaceAllvariablesInRow(tableRow);
@@ -86,7 +100,7 @@ public class QueryTable extends SlimTable {
     }
   }
 
-  private void replaceAllvariablesInRow(int tableRow) {
+  protected void replaceAllvariablesInRow(int tableRow) {
     int columns = table.getColumnCountInRow(tableRow);
     for (int col = 0; col < columns; col++) {
       String contents = table.getCellContents(col, tableRow);
@@ -94,14 +108,14 @@ public class QueryTable extends SlimTable {
     }
   }
 
-  private void markFieldsInMatchedRow(int tableRow, int matchedRow) {
+  protected void markFieldsInMatchedRow(int tableRow, int matchedRow) {
     int columns = table.getColumnCountInRow(tableRow);
     for (int col = 0; col < columns; col++) {
       markField(tableRow, matchedRow, col);
     }
   }
 
-  private void markField(int tableRow, int matchedRow, int col) {
+  protected void markField(int tableRow, int matchedRow, int col) {
     String actualValue = queryResults.getCell(fieldNames.get(col), matchedRow);
     String expectedValue = table.getCellContents(col, tableRow);
     table.setCell(col, tableRow, replaceSymbolsWithFullExpansion(expectedValue));
@@ -126,7 +140,8 @@ public class QueryTable extends SlimTable {
       }
     }
 
-    private Map<String, String> makeRowMap(Object row) {
+    @SuppressWarnings("unchecked")
+	private Map<String, String> makeRowMap(Object row) {
       Map<String, String> rowMap = new HashMap<String, String>();
       for (List<Object> columnPair : (List<List<Object>>) row) {
         String fieldName = (String) columnPair.get(0);

@@ -2,22 +2,24 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.slimTables;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static util.ListUtility.list;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import fitnesse.responders.run.slimResponder.MockSlimTestContext;
 import fitnesse.slim.SlimClient;
 import fitnesse.slim.converters.VoidConverter;
-import static fitnesse.util.ListUtility.list;
 import fitnesse.wiki.InMemoryPage;
 import fitnesse.wiki.WikiPage;
 import fitnesse.wiki.WikiPageUtil;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Ignore;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class DecisionTableTest {
   private WikiPage root;
@@ -72,7 +74,8 @@ public class DecisionTableTest {
   public void decisionTableCanBeConstructorOnly() throws Exception {
     makeDecisionTableAndBuildInstructions("|fixture|argument|\n");
     List<Object> expectedInstructions = list(
-      list("decisionTable_id_0", "make", "decisionTable_id", "fixture", "argument")
+      list("decisionTable_id_0", "make", "decisionTable_id", "fixture", "argument"),
+      list("decisionTable_id_1", "call", "decisionTable_id", "table", list())
     );
     assertEquals(expectedInstructions, instructions);
     Map<String, Object> pseudoResults = SlimClient.resultToMap(
@@ -94,17 +97,44 @@ public class DecisionTableTest {
     makeDecisionTableAndBuildInstructions(simpleDecisionTable);
     List<Object> expectedInstructions = list(
       list("decisionTable_id_0", "make", "decisionTable_id", "fixture", "argument"),
-      list("decisionTable_id_1", "call", "decisionTable_id", "reset"),
-      list("decisionTable_id_2", "call", "decisionTable_id", "setVar", "3"),
-      list("decisionTable_id_3", "call", "decisionTable_id", "execute"),
-      list("decisionTable_id_4", "call", "decisionTable_id", "func"),
-      list("decisionTable_id_5", "call", "decisionTable_id", "reset"),
-      list("decisionTable_id_6", "call", "decisionTable_id", "setVar", "7"),
-      list("decisionTable_id_7", "call", "decisionTable_id", "execute"),
-      list("decisionTable_id_8", "call", "decisionTable_id", "func")
+      list("decisionTable_id_1", "call", "decisionTable_id", "table", list(list("var", "func?"), list("3", "5"), list("7", "9"))),
+      list("decisionTable_id_2", "call", "decisionTable_id", "reset"),
+      list("decisionTable_id_3", "call", "decisionTable_id", "setVar", "3"),
+      list("decisionTable_id_4", "call", "decisionTable_id", "execute"),
+      list("decisionTable_id_5", "call", "decisionTable_id", "func"),
+      list("decisionTable_id_6", "call", "decisionTable_id", "reset"),
+      list("decisionTable_id_7", "call", "decisionTable_id", "setVar", "7"),
+      list("decisionTable_id_8", "call", "decisionTable_id", "execute"),
+      list("decisionTable_id_9", "call", "decisionTable_id", "func")
     );
     assertEquals(expectedInstructions.toString(), instructions.toString());
   }
+
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void settersAreFirstFunnctionsAreLastLeftToRight() throws Exception {
+    int counter = 0;
+    Map<String, Integer> counters = new HashMap<String, Integer>();
+    String functionsInOrder[] = {"setA", "setB", "setC", "setD", "setE", "setF", "fa", "fb", "fc", "fd", "fe", "ff"};
+
+    makeDecisionTableAndBuildInstructions("|DT:fixture|\n" +
+      "|a|fa?|b|fb?|c|fc?|d|e|f|fd?|fe?|ff?|\n" +
+      "|a|a|b|b|c|c|d|e|f|d|e|f|\n");
+
+    for (Object instructionObject : instructions) {
+      List<Object> instruction = (List<Object>) instructionObject;
+      for (String function : functionsInOrder) {
+        if (function.equals(instruction.get(3)))
+          counters.put(function, counter++);
+      }
+    }
+    assertEquals(functionsInOrder.length, counters.size());
+    for (int i=0; i<functionsInOrder.length; i++)
+      assertEquals(functionsInOrder[i], i, counters.get(functionsInOrder[i]));
+  }
+
+
 
   @Test
   public void canBuildInstructionsForTableWithVariables() throws Exception {
@@ -116,14 +146,15 @@ public class DecisionTableTest {
     );
     List<Object> expectedInstructions = list(
       list("decisionTable_id_0", "make", "decisionTable_id", "fixture"),
-      list("decisionTable_id_1", "call", "decisionTable_id", "reset"),
-      list("decisionTable_id_2", "call", "decisionTable_id", "setVar", "3"),
-      list("decisionTable_id_3", "call", "decisionTable_id", "execute"),
-      list("decisionTable_id_4", "callAndAssign", "V", "decisionTable_id", "func"),
-      list("decisionTable_id_5", "call", "decisionTable_id", "reset"),
-      list("decisionTable_id_6", "call", "decisionTable_id", "setVar", "$V"),
-      list("decisionTable_id_7", "call", "decisionTable_id", "execute"),
-      list("decisionTable_id_8", "call", "decisionTable_id", "func")
+      list("decisionTable_id_1", "call", "decisionTable_id", "table", list(list("var", "func?"), list("3", "$V="), list("$V", "9"))),
+      list("decisionTable_id_2", "call", "decisionTable_id", "reset"),
+      list("decisionTable_id_3", "call", "decisionTable_id", "setVar", "3"),
+      list("decisionTable_id_4", "call", "decisionTable_id", "execute"),
+      list("decisionTable_id_5", "callAndAssign", "V", "decisionTable_id", "func"),
+      list("decisionTable_id_6", "call", "decisionTable_id", "reset"),
+      list("decisionTable_id_7", "call", "decisionTable_id", "setVar", "$V"),
+      list("decisionTable_id_8", "call", "decisionTable_id", "execute"),
+      list("decisionTable_id_9", "call", "decisionTable_id", "func")
     );
     assertEquals(expectedInstructions.toString(), instructions.toString());
   }
@@ -134,14 +165,14 @@ public class DecisionTableTest {
     Map<String, Object> pseudoResults = SlimClient.resultToMap(
       list(
         list("decisionTable_id_0", "OK"),
-        list("decisionTable_id_1", VoidConverter.VOID_TAG), //reset
-        list("decisionTable_id_2", VoidConverter.VOID_TAG), //set
-        list("decisionTable_id_3", VoidConverter.VOID_TAG), //execute
-        list("decisionTable_id_4", "5"),
-        list("decisionTable_id_5", VoidConverter.VOID_TAG),
+        list("decisionTable_id_2", VoidConverter.VOID_TAG), //reset
+        list("decisionTable_id_3", VoidConverter.VOID_TAG), //set
+        list("decisionTable_id_4", VoidConverter.VOID_TAG), //execute
+        list("decisionTable_id_5", "5"),
         list("decisionTable_id_6", VoidConverter.VOID_TAG),
         list("decisionTable_id_7", VoidConverter.VOID_TAG),
-        list("decisionTable_id_8", "5")
+        list("decisionTable_id_8", VoidConverter.VOID_TAG),
+        list("decisionTable_id_9", "5")
       )
     );
     testContext.evaluateExpectations(pseudoResults);
@@ -163,14 +194,14 @@ public class DecisionTableTest {
     Map<String, Object> pseudoResults = SlimClient.resultToMap(
       list(
         list("decisionTable_id_0", "OK"),
-        list("decisionTable_id_1", VoidConverter.VOID_TAG), //reset
-        list("decisionTable_id_2", VoidConverter.VOID_TAG), //set
-        list("decisionTable_id_3", VoidConverter.VOID_TAG), //execute
-        list("decisionTable_id_4", "5"),
-        list("decisionTable_id_5", VoidConverter.VOID_TAG),
+        list("decisionTable_id_2", VoidConverter.VOID_TAG), //reset
+        list("decisionTable_id_3", VoidConverter.VOID_TAG), //set
+        list("decisionTable_id_4", VoidConverter.VOID_TAG), //execute
+        list("decisionTable_id_5", "5"),
         list("decisionTable_id_6", VoidConverter.VOID_TAG),
         list("decisionTable_id_7", VoidConverter.VOID_TAG),
-        list("decisionTable_id_8", "5")
+        list("decisionTable_id_8", VoidConverter.VOID_TAG),
+        list("decisionTable_id_9", "5")
       )
     );
     testContext.evaluateExpectations(pseudoResults);
@@ -205,9 +236,9 @@ public class DecisionTableTest {
         "|my var|my func?|\n" +
         "|8|7|\n"
     );
-    List<String> setInstruction = list("decisionTable_id_2", "call", "decisionTable_id", "setMyVar", "8");
-    List<String> callInstruction = list("decisionTable_id_4", "call", "decisionTable_id", "myFunc");
-    assertEquals(setInstruction, instructions.get(2));
-    assertEquals(callInstruction, instructions.get(4));
+    List<String> setInstruction = list("decisionTable_id_3", "call", "decisionTable_id", "setMyVar", "8");
+    List<String> callInstruction = list("decisionTable_id_5", "call", "decisionTable_id", "myFunc");
+    assertEquals(setInstruction, instructions.get(3));
+    assertEquals(callInstruction, instructions.get(5));
   }
 }

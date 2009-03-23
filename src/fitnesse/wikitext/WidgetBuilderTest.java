@@ -2,13 +2,32 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.wikitext;
 
-import fitnesse.wiki.InMemoryPage;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import junit.framework.TestCase;
 import fitnesse.wiki.WikiPage;
 import fitnesse.wiki.WikiPageDummy;
-import fitnesse.wikitext.widgets.*;
-import junit.framework.TestCase;
-
-import java.util.concurrent.atomic.AtomicBoolean;
+import fitnesse.wikitext.widgets.AnchorDeclarationWidget;
+import fitnesse.wikitext.widgets.AnchorMarkerWidget;
+import fitnesse.wikitext.widgets.BoldWidget;
+import fitnesse.wikitext.widgets.CenterWidget;
+import fitnesse.wikitext.widgets.ClasspathWidget;
+import fitnesse.wikitext.widgets.CollapsableWidget;
+import fitnesse.wikitext.widgets.EmailWidget;
+import fitnesse.wikitext.widgets.HeaderWidget;
+import fitnesse.wikitext.widgets.HruleWidget;
+import fitnesse.wikitext.widgets.ItalicWidget;
+import fitnesse.wikitext.widgets.ListWidget;
+import fitnesse.wikitext.widgets.MockWidgetRoot;
+import fitnesse.wikitext.widgets.NoteWidget;
+import fitnesse.wikitext.widgets.ParentWidget;
+import fitnesse.wikitext.widgets.PreformattedWidget;
+import fitnesse.wikitext.widgets.StrikeWidget;
+import fitnesse.wikitext.widgets.TableWidget;
+import fitnesse.wikitext.widgets.TextWidget;
+import fitnesse.wikitext.widgets.VirtualWikiWidget;
+import fitnesse.wikitext.widgets.WidgetRoot;
+import fitnesse.wikitext.widgets.WikiWordWidget;
 
 public class WidgetBuilderTest extends TestCase {
   private WikiPage mockSource;
@@ -216,7 +235,7 @@ public class WidgetBuilderTest extends TestCase {
 
     //This is our best attempt to get a race condition
     //by creating large number of threads.
-    for (int i = 0; i < 25000; i++) {
+    for (int i = 0; i < 1000; i++) {
       WidgetBuilderThread widgetBuilderThread = new WidgetBuilderThread(widgetBuilder, text, parent, failFlag);
       Thread thread = new Thread(widgetBuilderThread);
       try {
@@ -250,7 +269,7 @@ public class WidgetBuilderTest extends TestCase {
 
     assertEquals(expected.toString(), html);
     long duration = stop - start;
-    assertTrue(String.format("parsing took %s ms.", duration), duration < 100);
+    assertTrue(String.format("parsing took %s ms.", duration), duration < 500);
   }
 
   class WidgetBuilderThread implements Runnable {

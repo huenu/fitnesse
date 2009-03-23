@@ -2,13 +2,6 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse;
 
-import fitnesse.components.LogData;
-import fitnesse.http.HttpException;
-import fitnesse.http.Request;
-import fitnesse.http.Response;
-import fitnesse.http.ResponseSender;
-import fitnesse.responders.ErrorResponder;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,6 +9,16 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.GregorianCalendar;
+
+import util.StringUtil;
+import fitnesse.components.LogData;
+import fitnesse.http.HttpException;
+import fitnesse.http.Request;
+import fitnesse.http.Response;
+import fitnesse.http.ResponseSender;
+import fitnesse.responders.ErrorResponder;
+
+//import fitnesseMain.FitNesseMain;
 
 public class FitNesseExpediter implements ResponseSender {
   private Socket socket;
@@ -112,6 +115,8 @@ public class FitNesseExpediter implements ResponseSender {
 
   public Response createGoodResponse(Request request) throws Exception {
     Response response;
+    if (StringUtil.isBlank(request.getResource()) && StringUtil.isBlank(request.getQueryString()))
+      request.setResource("files/html/index.html");
     Responder responder = context.responderFactory.makeResponder(request, context.root);
     responder = context.authenticator.authenticate(context, request, responder);
     response = responder.makeResponse(context, request);

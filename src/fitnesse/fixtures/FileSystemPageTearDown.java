@@ -2,13 +2,13 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.fixtures;
 
-import fit.Fixture;
-
 import java.io.File;
+
+import fit.Fixture;
 
 public class FileSystemPageTearDown extends Fixture {
   public FileSystemPageTearDown() throws Exception {
-    fitnesse.util.FileUtil.deleteFileSystemDirectory(new File(FitnesseFixtureContext.baseDir));
+    util.FileUtil.deleteFileSystemDirectory(new File(FitnesseFixtureContext.baseDir));
     FitnesseFixtureContext.root = null;
 
   }

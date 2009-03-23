@@ -2,15 +2,21 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.updates;
 
-import fitnesse.util.FileUtil;
-import fitnesse.util.XmlUtil;
-import fitnesse.wiki.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import util.FileUtil;
+import util.XmlUtil;
+import fitnesse.wiki.FileSystemPage;
+import fitnesse.wiki.PageData;
+import fitnesse.wiki.SymbolicPage;
+import fitnesse.wiki.WikiPage;
+import fitnesse.wiki.WikiPageProperties;
+import fitnesse.wiki.WikiPageProperty;
+
 public class SymLinkPropertyFormatUpdate extends PageTraversingUpdate {
-  public SymLinkPropertyFormatUpdate(Updater updater) {
+  public SymLinkPropertyFormatUpdate(UpdaterImplementation updater) {
     super(updater);
   }
 

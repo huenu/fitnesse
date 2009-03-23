@@ -2,32 +2,47 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.responders.run.slimResponder;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import fitnesse.components.CommandRunner;
 import fitnesse.responders.run.ExecutionLog;
 import fitnesse.responders.run.TestSummary;
 import fitnesse.responders.run.TestSystem;
 import fitnesse.responders.run.TestSystemListener;
 import fitnesse.slim.SlimClient;
+import fitnesse.slim.SlimError;
 import fitnesse.slim.SlimServer;
 import fitnesse.slim.SlimService;
-import fitnesse.slim.SlimError;
+import fitnesse.slimTables.DecisionTable;
+import fitnesse.slimTables.ImportTable;
+import fitnesse.slimTables.OrderedQueryTable;
+import fitnesse.slimTables.QueryTable;
+import fitnesse.slimTables.ScenarioTable;
+import fitnesse.slimTables.ScriptTable;
+import fitnesse.slimTables.SlimErrorTable;
+import fitnesse.slimTables.SlimTable;
+import fitnesse.slimTables.Table;
+import fitnesse.slimTables.TableScanner;
+import fitnesse.slimTables.TableTable;
 import fitnesse.testutil.MockCommandRunner;
 import fitnesse.wiki.PageData;
 import fitnesse.wiki.WikiPage;
-import fitnesse.slimTables.*;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public abstract class SlimTestSystem extends TestSystem implements SlimTestContext {
   private CommandRunner slimRunner;
   private String slimCommand;
   private SlimClient slimClient;
-  private List<Object> instructions;
+  protected List<Object> instructions;
   private boolean started;
   protected TableScanner tableScanner;
   protected PageData testResults;
@@ -40,7 +55,7 @@ public abstract class SlimTestSystem extends TestSystem implements SlimTestConte
   private int slimSocket;
   protected final Pattern exceptionMessagePattern = Pattern.compile("message:<<(.*)>>");
   private Map<String, ScenarioTable> scenarios = new HashMap<String, ScenarioTable>();
-  private List<SlimTable.Expectation> expectations = new ArrayList<SlimTable.Expectation>();
+  protected List<SlimTable.Expectation> expectations = new ArrayList<SlimTable.Expectation>();
 
   public SlimTestSystem(WikiPage page, TestSystemListener listener) {
     super(page, listener);
@@ -101,14 +116,26 @@ public abstract class SlimTestSystem extends TestSystem implements SlimTestConte
   }
 
   public int getNextSlimSocket() {
+    int base = getSlimPortBase();
     synchronized (slimSocketOffset) {
-      int base = slimSocketOffset.get();
-      base++;
-      if (base >= 10)
-        base = 0;
-      slimSocketOffset.set(base);
-      return base + 8085;
+      int offset = slimSocketOffset.get();
+      offset = (offset+1)%10;
+      slimSocketOffset.set(offset);
+      return offset + base;
     }
+  }
+
+  private int getSlimPortBase() {
+    int base = 8085;
+    try {
+      String slimPort = page.getData().getVariable("SLIM_PORT");
+      if (slimPort != null) {
+        int slimPortInt = Integer.parseInt(slimPort);
+        base = slimPortInt;
+      }
+    } catch (Exception e) {
+    }
+    return base;
   }
 
   public void start() throws Exception {
@@ -201,6 +228,8 @@ public abstract class SlimTestSystem extends TestSystem implements SlimTestConte
     String tableType = table.getCellContents(0, 0);
     if (beginsWith(tableType, "dt:") || beginsWith(tableType, "decision:"))
       return new DecisionTable(table, tableId, slimTestContext);
+    else if (beginsWith(tableType, "ordered query:"))
+      return new OrderedQueryTable(table, tableId, slimTestContext);
     else if (beginsWith(tableType, "query:"))
       return new QueryTable(table, tableId, slimTestContext);
     else if (beginsWith(tableType, "table"))
@@ -334,6 +363,26 @@ public abstract class SlimTestSystem extends TestSystem implements SlimTestConte
 
   public Map<String, ScenarioTable> getScenarios() {
     return scenarios;
+  }
+
+  public static void clearSlimPortOffset() {
+    slimSocketOffset.set(0);
+  }
+
+  public List<SlimTable> getTestTables() {
+    return testTables;
+  }
+
+  public List<Object> getInstructions() {
+    return instructions;
+  }
+
+  public Map<String, Object> getInstructionResults() {
+    return instructionResults;
+  }
+
+  public List<SlimTable.Expectation> getExpectations() {
+    return expectations;
   }
 
   static class ExceptionList {

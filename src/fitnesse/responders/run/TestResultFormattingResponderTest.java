@@ -2,9 +2,14 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.responders.run;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+
+import util.RegexTestCase;
 import fit.Counts;
+import fit.FitProtocol;
 import fitnesse.FitNesseContext;
-import fitnesse.components.FitProtocol;
 import fitnesse.http.MockRequest;
 import fitnesse.http.MockResponseSender;
 import fitnesse.http.Response;
@@ -12,11 +17,6 @@ import fitnesse.runner.HtmlResultFormatter;
 import fitnesse.runner.MockResultFormatter;
 import fitnesse.runner.PageResult;
 import fitnesse.runner.XmlResultFormatter;
-import fitnesse.testutil.RegexTestCase;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 
 public class TestResultFormattingResponderTest extends RegexTestCase {
   private PipedOutputStream output;

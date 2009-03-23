@@ -2,9 +2,12 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.responders.refactoring;
 
+import java.util.List;
+
 import fitnesse.FitNesseContext;
 import fitnesse.authentication.AlwaysSecureOperation;
 import fitnesse.authentication.SecureOperation;
+import fitnesse.authentication.SecureResponder;
 import fitnesse.html.HtmlPage;
 import fitnesse.html.HtmlTag;
 import fitnesse.html.HtmlUtil;
@@ -12,15 +15,12 @@ import fitnesse.html.RawHtml;
 import fitnesse.http.Request;
 import fitnesse.http.Response;
 import fitnesse.http.SimpleResponse;
-import fitnesse.responders.SecureResponder;
 import fitnesse.revisioncontrol.RevisionControlOperation;
 import fitnesse.revisioncontrol.State;
 import fitnesse.wiki.FileSystemPage;
 import fitnesse.wiki.PathParser;
 import fitnesse.wiki.WikiPage;
 import fitnesse.wiki.WikiPagePath;
-
-import java.util.List;
 
 public class DeletePageResponder implements SecureResponder {
   public Response makeResponse(final FitNesseContext context, final Request request) throws Exception {
