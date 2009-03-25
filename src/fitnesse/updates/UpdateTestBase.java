@@ -2,13 +2,14 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.updates;
 
+import junit.framework.TestCase;
+import util.FileUtil;
 import fitnesse.FitNesseContext;
-import fitnesse.util.FileUtil;
+import fitnesse.Updater;
 import fitnesse.wiki.FileSystemPage;
 import fitnesse.wiki.PageCrawler;
 import fitnesse.wiki.PathParser;
 import fitnesse.wiki.WikiPage;
-import junit.framework.TestCase;
 
 public abstract class UpdateTestBase extends TestCase {
   public static final String testDir = "testDir";
@@ -36,7 +37,7 @@ public abstract class UpdateTestBase extends TestCase {
     pageOne = crawler.addPage(root, PathParser.parse("PageOne"), "some content");
     pageTwo = crawler.addPage(pageOne, PathParser.parse("PageTwo"), "page two content");
 
-    updater = new Updater(context);
+    updater = new UpdaterImplementation(context);
     update = makeUpdate();
   }
 

@@ -2,13 +2,18 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.wikitext.widgets;
 
-import fitnesse.components.PageReferencer;
-import fitnesse.wiki.*;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import fitnesse.components.PageReferencer;
+import fitnesse.wiki.PageCrawler;
+import fitnesse.wiki.PathParser;
+import fitnesse.wiki.ProxyPage;
+import fitnesse.wiki.VirtualEnabledPageCrawler;
+import fitnesse.wiki.WikiPage;
+import fitnesse.wiki.WikiPagePath;
 
 public class IncludeWidget extends ParentWidget implements PageReferencer {
   public static final String REGEXP =
@@ -48,7 +53,7 @@ public class IncludeWidget extends ParentWidget implements PageReferencer {
     includedPage = crawler.getSiblingPage(includingPage, pagePath); //Retain this
 
     if (includedPage != null) {
-      includedPage.setParentForVariables(this.getWikiPage().getParentForVariables());
+      includedPage.setParentForVariables(getWikiPage().getParentForVariables());
       return includedPage.getData().getContent();
     } else if (includingPage instanceof ProxyPage) {
       ProxyPage proxy = (ProxyPage) includingPage;
@@ -86,31 +91,51 @@ public class IncludeWidget extends ParentWidget implements PageReferencer {
 
   //TODO MDM I know this is bad...  But it seems better then creating two new widgets.
   private void buildWidget(String option) throws Exception {
-    String widgetText = processLiterals(getIncludedPageContent());
+    String widgetText = processLiterals(getIncludedPageContent(option));
 
     //Create imposter root with alias = this if included page found.
     ParentWidget incRoot = (includedPage == null) ? this : new WidgetRoot(includedPage, this);
 
-    if ("-seamless".equals(option) || getRoot().isGatheringInfo()) {  //Use the imposter if found.
+    if (isSeamLess(option) || getRoot().isGatheringInfo()) {  //Use the imposter if found.
       incRoot.addChildWidgets(widgetText + "\n");
     } else {  //Use new constructor with dual scope.
       new CollapsableWidget(incRoot, this, getPrefix(option) + pageName, widgetText, getCssClass(option), isCollapsed(
-        option
+          option
       )
       );
     }
   }
 
+  //TODO MG There was no better way to nest in this behaviour. As future evolution point we can
+  //        expand the if clause to also accept regular includes and replace PAGE_NAME all the time.
+  private String getIncludedPageContent(String option) throws Exception {
+
+    if (isSetup(option) || isTeardown(option)) {
+      return replaceSpecialVariables(getIncludedPageContent());
+    }
+
+    return getIncludedPageContent();
+  }
+
+  //TODO MG What about PAGE_PATH?
+  private String replaceSpecialVariables(String includedPageContent) throws Exception {
+    return includedPageContent.replaceAll("\\$\\{PAGE_NAME\\}", includingPage.getName());
+  }
+
+  private boolean isSeamLess(String option) {
+    return "-seamless".equals(option);
+  }
+
   private String getCssClass(String option) {
-    return (String) optionCssMap.get(option);
+    return optionCssMap.get(option);
   }
 
   private String getPrefix(String option) {
-    return (String) optionPrefixMap.get(option);
+    return optionPrefixMap.get(option);
   }
 
   private boolean isCollapsed(String option)
-    throws Exception {
+  throws Exception {
     if (isSetup(option) && isSetupCollapsed())
       return true;
     else if (isTeardown(option) && isTeardownCollapsed())
@@ -139,8 +164,9 @@ public class IncludeWidget extends ParentWidget implements PageReferencer {
   }
 
   private boolean isTeardownCollapsed()
-    throws Exception {
-    return "true".equals(parent.getVariable(COLLAPSE_TEARDOWN));
+  throws Exception {
+    final String teardownCollapseVariable = parent.getVariable(COLLAPSE_TEARDOWN);
+    return teardownCollapseVariable == null || "true".equals(teardownCollapseVariable);
   }
 
   private boolean isTeardown(String option) {
@@ -148,8 +174,9 @@ public class IncludeWidget extends ParentWidget implements PageReferencer {
   }
 
   private boolean isSetupCollapsed()
-    throws Exception {
-    return "true".equals(parent.getVariable(COLLAPSE_SETUP));
+  throws Exception {
+    final String setupCollapseVariable = parent.getVariable(COLLAPSE_SETUP);
+    return setupCollapseVariable == null || "true".equals(setupCollapseVariable);
   }
 
   private boolean isSetup(String option) {
@@ -166,5 +193,11 @@ public class IncludeWidget extends ParentWidget implements PageReferencer {
 
   public String asWikiText() throws Exception {
     return "";
+  }
+
+  @Override
+  public String processLiterals(String value) throws Exception {
+    // TODO Auto-generated method stub
+    return super.processLiterals(value);
   }
 }

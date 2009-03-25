@@ -2,8 +2,8 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse;
 
+import util.RegexTestCase;
 import fitnesse.testutil.FitNesseUtil;
-import fitnesse.testutil.RegexTestCase;
 import fitnesse.wiki.InMemoryPage;
 import fitnesse.wiki.PageCrawler;
 import fitnesse.wiki.PathParser;

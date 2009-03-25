@@ -2,12 +2,17 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.slimTables;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import util.StringUtil;
 import fitnesse.responders.run.TestSummary;
 import fitnesse.responders.run.slimResponder.SlimTestContext;
 import fitnesse.slim.SlimError;
-import fitnesse.util.StringUtil;
-
-import java.util.*;
 
 public class ScenarioTable extends SlimTable {
   private static final String instancePrefix = "scenarioTable";
@@ -118,7 +123,7 @@ public class ScenarioTable extends SlimTable {
     private ScriptTable scriptTable;
 
     private ScenarioExpectation(ScriptTable scriptTable, int row) {
-      super(null, "", -1, row);  // We don't care about anything but the row.
+      super("", -1, row);  // We don't care about anything but the row.
       this.scriptTable = scriptTable;
     }
 
@@ -126,11 +131,11 @@ public class ScenarioTable extends SlimTable {
       TestSummary counts = scriptTable.getTestSummary();
       boolean testStatus = (counts.wrong + counts.exceptions) == 0;
       SlimTable parent = scriptTable.getParent();
-      parent.getTable().setTestStatusOnRow(row, testStatus);
+      parent.getTable().setTestStatusOnRow(getRow(), testStatus);
       parent.getTestSummary().add(scriptTable.getTestSummary());
     }
 
-    protected String createEvaluationMessage(String value, String originalValue) {
+    protected String createEvaluationMessage(String actual, String expected) {
       return null;
     }
   }

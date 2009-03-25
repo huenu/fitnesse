@@ -2,10 +2,6 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.updates;
 
-import fitnesse.wiki.FileSystemPage;
-import fitnesse.wiki.WikiPage;
-import fitnesse.wiki.WikiPageProperties;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,10 +9,14 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 
+import fitnesse.wiki.FileSystemPage;
+import fitnesse.wiki.WikiPage;
+import fitnesse.wiki.WikiPageProperties;
+
 public class PropertiesToXmlUpdate extends PageTraversingUpdate {
   public static final String old_propertiesFilename = "/properties";
 
-  public PropertiesToXmlUpdate(Updater updater) {
+  public PropertiesToXmlUpdate(UpdaterImplementation updater) {
     super(updater);
   }
 

@@ -2,12 +2,12 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.runner;
 
+import java.io.InputStream;
+
+import util.RegexTestCase;
+import util.StreamReader;
 import fitnesse.html.HtmlPageFactory;
 import fitnesse.responders.run.TestSummary;
-import fitnesse.testutil.RegexTestCase;
-import fitnesse.util.StreamReader;
-
-import java.io.InputStream;
 
 public class HtmlResultFormatterTest extends RegexTestCase {
   private HtmlResultFormatter formatter;

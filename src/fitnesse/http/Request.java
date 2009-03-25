@@ -2,14 +2,24 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.http;
 
-import fitnesse.components.Base64;
-import fitnesse.util.StreamReader;
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import util.StreamReader;
+import fitnesse.components.Base64;
 
 public class Request {
   private static final Pattern requestLinePattern = Pattern.compile("(\\p{Upper}+?) ([^\\s]+)");
@@ -23,7 +33,7 @@ public class Request {
 
   protected StreamReader input;
   protected String requestURI;
-  protected String resource;
+  private String resource;
   protected String queryString;
   protected HashMap<String, Object> inputs = new HashMap<String, Object>();
   protected HashMap<String, Object> headers = new HashMap<String, Object>();
@@ -175,6 +185,10 @@ public class Request {
 
   public String getResource() {
     return resource;
+  }
+
+  public void setResource(String resource) {
+    this.resource = resource;
   }
 
   public String getQueryString() {

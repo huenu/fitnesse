@@ -27,6 +27,7 @@
 #
 |Response Examiner.|
 |type|pattern|matches?|value|
-|contents|<li><a href="!-#-!Header_one">Header one</a></li>|true||
-|contents|<li><a href="!-#-!Header_two">Header two</a></li>|true||
+|contents|<a href="!-#-!Header_one">Header one</a>|true||
+|contents|<a href="!-#-!Header_two">Header two</a>|true||
+
 

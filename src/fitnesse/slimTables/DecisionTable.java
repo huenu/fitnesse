@@ -2,9 +2,14 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.slimTables;
 
-import fitnesse.responders.run.slimResponder.SlimTestContext;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
+import fitnesse.responders.run.slimResponder.SlimTestContext;
 
 public class DecisionTable extends SlimTable {
   private static final String instancePrefix = "decisionTable";
@@ -42,6 +47,8 @@ public class DecisionTable extends SlimTable {
   private class DecisionTableCaller {
     protected Map<String, Integer> vars = new HashMap<String, Integer>();
     protected Map<String, Integer> funcs = new HashMap<String, Integer>();
+    protected List<String> varsLeftToRight = new ArrayList<String>();
+    protected List<String> funcsLeftToRight = new ArrayList<String>();
     protected int columnHeaders;
 
     protected void gatherFunctionsAndVariablesFromColumnHeader() {
@@ -52,10 +59,14 @@ public class DecisionTable extends SlimTable {
 
     private void putColumnHeaderInFunctionOrVariableList(int col) {
       String cell = table.getCellContents(col, 1);
-      if (cell.endsWith("?"))
-        funcs.put(cell.substring(0, cell.length() - 1), col);
-      else
+      if (cell.endsWith("?")) {
+        String funcName = cell.substring(0, cell.length() - 1);
+        funcsLeftToRight.add(funcName);
+        funcs.put(funcName, col);
+      } else {
+        varsLeftToRight.add(cell);
         vars.put(cell, col);
+      }
     }
 
     protected void checkRow(int row) {
@@ -96,6 +107,7 @@ public class DecisionTable extends SlimTable {
   private class FixtureCaller extends DecisionTableCaller {
     public void call(String fixtureName) {
       constructFixture(fixtureName);
+      dontReportExceptionsInTheseInstructions.add(callFunction(getTableName(), "table", tableAsList()));
       if (table.getRowCount() > 2)
         invokeRows();
     }
@@ -119,8 +131,7 @@ public class DecisionTable extends SlimTable {
     }
 
     private void callFunctions(int row) {
-      Set<String> funcKeys = funcs.keySet();
-      for (String functionName : funcKeys) {
+      for (String functionName : funcsLeftToRight) {
         callFunctionInRow(functionName, row);
       }
     }
@@ -139,12 +150,11 @@ public class DecisionTable extends SlimTable {
 
     private void setFunctionCallExpectation(int col, int row) {
       String expectedValue = table.getCellContents(col, row);
-      addExpectation(new ReturnedValueExpectation(expectedValue, getInstructionTag(), col, row));
+      addExpectation(new ReturnedValueExpectation(getInstructionTag(), col, row));
     }
 
     private void setVariables(int row) {
-      Set<String> varKeys = vars.keySet();
-      for (String var : varKeys) {
+      for (String var : varsLeftToRight) {
         int col = vars.get(var);
         String valueToSet = table.getUnescapedCellContents(col, row);
         setVariableExpectation(col, row);

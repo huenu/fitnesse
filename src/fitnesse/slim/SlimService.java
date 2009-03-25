@@ -2,10 +2,10 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.slim;
 
-import fitnesse.components.CommandLine;
-import fitnesse.socketservice.SocketService;
-
 import java.util.Arrays;
+
+import util.CommandLine;
+import fitnesse.socketservice.SocketService;
 
 public class SlimService extends SocketService {
   public static SlimService instance = null;

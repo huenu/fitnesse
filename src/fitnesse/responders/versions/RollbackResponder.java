@@ -4,13 +4,13 @@ package fitnesse.responders.versions;
 
 import fitnesse.FitNesseContext;
 import fitnesse.authentication.SecureOperation;
+import fitnesse.authentication.SecureResponder;
 import fitnesse.authentication.SecureWriteOperation;
 import fitnesse.components.RecentChanges;
 import fitnesse.http.Request;
 import fitnesse.http.Response;
 import fitnesse.http.SimpleResponse;
 import fitnesse.responders.NotFoundResponder;
-import fitnesse.responders.SecureResponder;
 import fitnesse.wiki.PageData;
 import fitnesse.wiki.PathParser;
 import fitnesse.wiki.WikiPage;

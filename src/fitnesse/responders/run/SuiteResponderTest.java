@@ -7,9 +7,8 @@ import fitnesse.http.MockRequest;
 import fitnesse.http.MockResponseSender;
 import fitnesse.http.Response;
 import fitnesse.testutil.FitSocketReceiver;
-import static fitnesse.testutil.RegexTestCase.*;
-import fitnesse.util.XmlUtil;
 import fitnesse.wiki.*;
+import static junit.framework.Assert.fail;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -18,10 +17,8 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import static util.RegexTestCase.*;
+import util.XmlUtil;
 
 public class SuiteResponderTest {
   private MockRequest request;
@@ -30,10 +27,7 @@ public class SuiteResponderTest {
   private WikiPage suite;
   private FitNesseContext context;
   private FitSocketReceiver receiver;
-  private WikiPage testPage;
   private PageCrawler crawler;
-  private WikiPage testPage2;
-  private WikiPage testChildPage;
   private String suitePageName;
   private final String fitPassFixture = "|!-fitnesse.testutil.PassFixture-!|\n";
   private final String simpleSlimDecisionTable = "!define TEST_SYSTEM {slim}\n" +
@@ -50,7 +44,7 @@ public class SuiteResponderTest {
     data.setContent(classpathWidgets());
     root.commit(data);
     suite = crawler.addPage(root, PathParser.parse(suitePageName), "This is the test suite\n");
-    testPage = addTestToSuite("TestOne", fitPassFixture);
+    addTestToSuite("TestOne", fitPassFixture);
 
     request = new MockRequest();
     request.setResource(suitePageName);
@@ -88,30 +82,11 @@ public class SuiteResponderTest {
     return results;
   }
 
-  @Test
-  public void testGatherXRefTestPages() throws Exception {
-    WikiPage testPage = crawler.addPage(root, PathParser.parse("SomePage"), "!see PageA\n!see PageB");
-    WikiPage pageA = crawler.addPage(root, PathParser.parse("PageA"));
-    WikiPage pageB = crawler.addPage(root, PathParser.parse("PageB"));
-    List<?> xrefTestPages = SuiteResponder.gatherCrossReferencedTestPages(testPage, root);
-    assertEquals(2, xrefTestPages.size());
-    assertTrue(xrefTestPages.contains(pageA));
-    assertTrue(xrefTestPages.contains(pageB));
-  }
-
-  @Test
-  public void testBuildClassPath() throws Exception {
-    responder.page = suite;
-    List<WikiPage> testPages = SuiteResponder.getAllTestPagesUnder(suite);
-    String classpath = SuiteResponder.buildClassPath(testPages, responder.page);
-    assertSubString("classes", classpath);
-    assertSubString("dummy.jar", classpath);
-  }
 
   @Test
   public void testWithOneTest() throws Exception {
     String results = runSuite();
-    assertSubString("href=\"#TestOne1\"", results);
+    assertSubString("href=\\\"#TestOne1\\\"", results);
     assertSubString("1 right", results);
     assertSubString("id=\"TestOne1\"", results);
     assertSubString(" href=\"SuitePage.TestOne\"", results);
@@ -127,8 +102,8 @@ public class SuiteResponderTest {
     addTestPage(root, "XrefTwo", fitPassFixture);
 
     String results = runSuite();
-    assertSubString("href=\"#XrefOne2\"", results);
-    assertSubString("href=\"#XrefTwo3\"", results);
+    assertSubString("href=\\\"#XrefOne2\\\"", results);
+    assertSubString("href=\\\"#XrefTwo3\\\"", results);
   }
 
   @Test
@@ -136,8 +111,8 @@ public class SuiteResponderTest {
     addTestToSuite("TestTwo", "|!-fitnesse.testutil.FailFixture-!|\n\n|!-fitnesse.testutil.FailFixture-!|\n");
     String results = runSuite();
 
-    assertSubString("href=\"#TestOne1\"", results);
-    assertSubString("href=\"#TestTwo2\"", results);
+    assertSubString("href=\\\"#TestOne1\\\"", results);
+    assertSubString("href=\\\"#TestTwo2\\\"", results);
     assertSubString("1 right", results);
     assertSubString("2 wrong", results);
     assertSubString("id=\"TestOne1\"", results);
@@ -156,8 +131,8 @@ public class SuiteResponderTest {
     pageTwo.commit(data);
     String results = runSuite();
 
-    assertSubString("href=\"#TestOne1\"", results);
-    assertNotSubString("href=\"#TestTwo2\"", results);
+    assertSubString("href=\\\"#TestOne1\\\"", results);
+    assertNotSubString("href=\\\"#TestTwo2\\\"", results);
     assertSubString("1 right", results);
     assertSubString("0 wrong", results);
     assertSubString("id=\"TestOne1\"", results);
@@ -199,45 +174,6 @@ public class SuiteResponderTest {
     assertSubString("Exit-Code: 0", results);
   }
 
-  @Test
-  public void testGetAllTestPages() throws Exception {
-    setUpForGetAllTestPages();
-
-    List<WikiPage> testPages = SuiteResponder.getAllTestPagesUnder(suite);
-    assertEquals(3, testPages.size());
-    assertEquals(true, testPages.contains(testPage));
-    assertEquals(true, testPages.contains(testPage2));
-    assertEquals(true, testPages.contains(testChildPage));
-  }
-
-  private void setUpForGetAllTestPages() throws Exception {
-    testPage2 = addTestToSuite("TestPageTwo", "test page two");
-    testChildPage = testPage2.addChildPage("TestChildPage");
-    PageData data = testChildPage.getData();
-    data.setAttribute("Test");
-    testChildPage.commit(data);
-  }
-
-  @Test
-  public void testGetAllTestPagesSortsByQulifiedNames() throws Exception {
-    setUpForGetAllTestPages();
-    List<WikiPage> testPages = SuiteResponder.getAllTestPagesUnder(suite);
-    assertEquals(3, testPages.size());
-    assertEquals(testPage, testPages.get(0));
-    assertEquals(testPage2, testPages.get(1));
-    assertEquals(testChildPage, testPages.get(2));
-  }
-
-  @Test
-  public void testSetUpAndTearDown() throws Exception {
-    WikiPage setUp = crawler.addPage(root, PathParser.parse("SuiteSetUp"), "suite set up");
-    WikiPage tearDown = crawler.addPage(root, PathParser.parse("SuiteTearDown"), "suite tear down");
-
-    List<?> testPages = responder.makePageList();
-    assertEquals(3, testPages.size());
-    assertSame(setUp, testPages.get(0));
-    assertSame(tearDown, testPages.get(2));
-  }
 
   @Test
   public void testExecutionStatusAppears() throws Exception {
@@ -273,29 +209,51 @@ public class SuiteResponderTest {
     addTestPagesWithSuiteProperty();
     request.setQueryString("suiteFilter=xxx");
     String results = runSuite();
-    assertDoesntHaveRegexp(".*href=\"#TestOne\".*", results);
-    assertDoesntHaveRegexp(".*href=\"#TestTwo\".*", results);
-    assertDoesntHaveRegexp(".*href=\"#TestThree\".*", results);
+    assertDoesntHaveRegexp(".*href=\\\"#TestOne\\\".*", results);
+    assertDoesntHaveRegexp(".*href=\\\"#TestTwo\\\".*", results);
+    assertDoesntHaveRegexp(".*href=\\\"#TestThree\\\".*", results);
   }
 
   @Test
-  public void testSimpleMatchingSuiteFilter() throws Exception {
+  public void testSimpleMatchingSuiteQuery() throws Exception {
     addTestPagesWithSuiteProperty();
     request.setQueryString("suiteFilter=foo");
     String results = runSuite();
-    assertDoesntHaveRegexp(".*href=\"#TestOne.*", results);
-    assertHasRegexp(".*href=\"#TestTwo1\".*", results);
-    assertDoesntHaveRegexp(".*href=\"#TestThree.*", results);
+    assertDoesntHaveRegexp(".*href=\\\"#TestOne.*", results);
+    assertSubString("href=\\\"#TestTwo1\\\"", results);
+    assertDoesntHaveRegexp(".*href=\\\"#TestThree.*", results);
   }
 
   @Test
-  public void testSecondMatchingSuiteFilter() throws Exception {
+  public void testSecondMatchingSuiteQuery() throws Exception {
     addTestPagesWithSuiteProperty();
     request.setQueryString("suiteFilter=smoke");
     String results = runSuite();
-    assertDoesntHaveRegexp(".*href=\"#TestOne.*", results);
-    assertDoesntHaveRegexp(".*href=\"#TestTwo.*", results);
-    assertHasRegexp(".*href=\"#TestThree1\".*", results);
+    assertDoesntHaveRegexp(".*href=\\\"#TestOne.*", results);
+    assertDoesntHaveRegexp(".*href=\\\"#TestTwo.*", results);
+    assertSubString("href=\\\"#TestThree1\\\"", results);
+  }
+
+  @Test
+  public void multipleSuiteQuery() throws Exception {
+    addTestPagesWithSuiteProperty();
+    request.setQueryString("suiteFilter=smoke,foo");
+    String results = runSuite();
+    assertDoesntHaveRegexp("#TestOne", results);
+    assertHasRegexp("#TestTwo", results);
+    assertHasRegexp("#TestThree", results);
+  }
+
+  @Test
+  public void testTagsShouldBeInheritedFromSuite() throws Exception {
+    PageData suiteData = suite.getData();
+    suiteData.setAttribute(PageData.PropertySUITES, "tag");
+    suite.commit(suiteData);
+    addTestToSuite("TestInheritsTag", fitPassFixture);
+
+    request.setQueryString("suiteFilter=tag");
+    String results = runSuite();
+    assertHasRegexp("#TestInheritsTag", results);
   }
 
   private void addTestPagesWithSuiteProperty() throws Exception {
@@ -308,48 +266,6 @@ public class SuiteResponderTest {
     test2.commit(data2);
     test3.commit(data3);
   }
-
-  @Test
-  public void testGenerateSuiteMapWithMultipleTestSystems() throws Exception {
-    WikiPage slimPage = addTestToSuite("SlimTest", simpleSlimDecisionTable);
-    Map<TestSystem.Descriptor, LinkedList<WikiPage>> map = SuiteResponder.makeMapOfPagesByTestSystem(suite, root, null);
-
-    TestSystem.Descriptor fitDescriptor = TestSystem.getDescriptor(testPage.getData());
-    TestSystem.Descriptor slimDescriptor = TestSystem.getDescriptor(slimPage.getData());
-    List<WikiPage> fitList = map.get(fitDescriptor);
-    List<WikiPage> slimList = map.get(slimDescriptor);
-
-    assertEquals(1, fitList.size());
-    assertEquals(1, slimList.size());
-    assertEquals(testPage, fitList.get(0));
-    assertEquals(slimPage, slimList.get(0));
-  }
-
-  @Test
-  public void testPagesForTestSystemAreSurroundedBySuiteSetupAndTeardown() throws Exception {
-    WikiPage slimPage = addTestToSuite("SlimTest", simpleSlimDecisionTable);
-    WikiPage setUp = crawler.addPage(root, PathParser.parse("SuiteSetUp"), "suite set up");
-    WikiPage tearDown = crawler.addPage(root, PathParser.parse("SuiteTearDown"), "suite tear down");
-
-    Map<TestSystem.Descriptor, LinkedList<WikiPage>> map = SuiteResponder.makeMapOfPagesByTestSystem(suite, root, null);
-    TestSystem.Descriptor fitDescriptor = TestSystem.getDescriptor(testPage.getData());
-    TestSystem.Descriptor slimDescriptor = TestSystem.getDescriptor(slimPage.getData());
-
-    List<WikiPage> fitList = map.get(fitDescriptor);
-    List<WikiPage> slimList = map.get(slimDescriptor);
-
-    assertEquals(3, fitList.size());
-    assertEquals(3, slimList.size());
-
-    assertEquals(setUp, fitList.get(0));
-    assertEquals(testPage, fitList.get(1));
-    assertEquals(tearDown, fitList.get(2));
-
-    assertEquals(setUp, slimList.get(0));
-    assertEquals(slimPage, slimList.get(1));
-    assertEquals(tearDown, slimList.get(2));
-  }
-
 
   @Test
   public void testCanMixSlimAndFitTests() throws Exception {
@@ -379,6 +295,8 @@ public class SuiteResponderTest {
       if ("SlimTest".equals(pageName)) {
         TestResponderTest.assertCounts(testResult, "2", "0", "0", "0");
         assertSubString("DT:fitnesse.slim.test.TestSlim", XmlUtil.getTextValue(testResult, "content"));
+        Element instructions = XmlUtil.getElementByTagName(testResult, "instructions");
+        assertTrue(instructions != null);
       } else if ("TestOne".equals(pageName)) {
         TestResponderTest.assertCounts(testResult, "1", "0", "0", "0");
         assertSubString("PassFixture", XmlUtil.getTextValue(testResult, "content"));
@@ -404,5 +322,4 @@ public class SuiteResponderTest {
     String pageName = XmlUtil.getTextValue(result, "relativePageName");
     assertEquals("(TestOne)", pageName);
   }
-
 }
