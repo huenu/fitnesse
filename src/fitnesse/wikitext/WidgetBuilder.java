@@ -10,8 +10,7 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-		PageTOCWidget.class,import fitnesse.wikitext.widgets.AliasLinkWidget;
+import fitnesse.wikitext.widgets.AliasLinkWidget;
 import fitnesse.wikitext.widgets.AnchorDeclarationWidget;
 import fitnesse.wikitext.widgets.AnchorMarkerWidget;
 import fitnesse.wikitext.widgets.BoldWidget;
@@ -37,6 +36,7 @@ import fitnesse.wikitext.widgets.PreformattedWidget;
 import fitnesse.wikitext.widgets.StrikeWidget;
 import fitnesse.wikitext.widgets.StyleWidget;
 import fitnesse.wikitext.widgets.TOCWidget;
+import fitnesse.wikitext.widgets.PageTOCWidget;
 import fitnesse.wikitext.widgets.TableWidget;
 import fitnesse.wikitext.widgets.TextWidget;
 import fitnesse.wikitext.widgets.TodayWidget;

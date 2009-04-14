@@ -51,6 +51,103 @@ public class PageTOCWidgetTest extends WidgetTestCase {
 		}
 	}
 
+
+	public void testMissingLevel() {
+		StringBuffer pageContents = new StringBuffer();
+		
+		pageContents.append("!1 Main title\n");
+		pageContents.append("!2 Firt subtitle\n");
+		pageContents.append("!1 Other Main title\n");
+		pageContents.append("!3 subtitle of level 3\n");
+		pageContents.append("!5 subsubtitle of level 5\n");
+
+		try {
+
+			PageTOCWidget toc = new PageTOCWidget(this.widgetRoot(pageContents
+					.toString()), "");
+
+			String render = unformattedText(toc);
+			assertContains("<div class=\"toc1\">", render);
+			assertContains("<div class=\"contents\">", render);
+			assertContains("<b>Index:</b>", render);
+
+			assertContains(
+					"<ul><li><a href=\"#Main_title\">Main title</a></li>" +
+					"<ul><li><a href=\"#Firt_subtitle\">Firt subtitle</a></li></ul>" +
+					"<li><a href=\"#Other_Main_title\">Other Main title</a></li>" +
+					"<ul><li><a href=\"#subtitle_of_level_3\">subtitle of level 3</a></li>" +
+					"<ul><li><a href=\"#subsubtitle_of_level_5\">subsubtitle of level 5</a></li>" +
+					"</ul></ul></ul>",
+					render);
+			String renderedText=toc.render();
+			assertRef("Main_title", "Main title", renderedText);
+			assertRef("Firt_subtitle", "Firt subtitle",renderedText);
+			assertRef("subtitle_of_level_3", "subtitle of level 3", renderedText);
+
+		} catch (Exception e) {
+			fail(e.getMessage());		
+		}
+		}
+	
+
+
+	public void testMissingLevel2() {
+		StringBuffer pageContents = new StringBuffer();
+		
+		pageContents.append("!1 Main title\n");
+		pageContents.append("!2 Firt subtitle\n");
+		pageContents.append("!4 subsubtitle level 4\n");
+		pageContents.append("!2 second subtitle\n");
+		pageContents.append("!1 Other Main title\n");
+		pageContents.append("!3 subtitle of level 3\n");
+		pageContents.append("!5 subsubtitle of level 5\n");
+		pageContents.append("!4 subsubtitle of level 4\n");
+		pageContents.append("!5 subsubsubtitle of level 5\n");
+
+		try {
+
+			PageTOCWidget toc = new PageTOCWidget(this.widgetRoot(pageContents
+					.toString()), "");
+
+			String render = unformattedText(toc);
+			assertContains("<div class=\"toc1\">", render);
+			assertContains("<div class=\"contents\">", render);
+			assertContains("<b>Index:</b>", render);
+
+			
+
+			assertContains(
+					"<li><a href=\"#Main_title\">Main title</a></li>" +
+					"<ul>" +
+						"<li><a href=\"#Firt_subtitle\">Firt subtitle</a></li>" +
+						"<ul><li><a href=\"#subsubtitle_level_4\">subsubtitle level 4</a></li></ul>" +
+						"<li><a href=\"#second_subtitle\">second subtitle</a></li>" +
+					"</ul>",render); 
+			assertContains(
+					"<li><a href=\"#Other_Main_title\">Other Main title</a></li>" +
+					"<ul>" +
+						"<li><a href=\"#subtitle_of_level_3\">subtitle of level 3</a></li>" +
+						"<ul>" +
+							"<ul>" +
+								"<li><a href=\"#subsubtitle_of_level_5\">subsubtitle of level 5</a></li>" +
+							"</ul>" +
+							"<li><a href=\"#subsubtitle_of_level_4\">subsubtitle of level 4</a></li>" +
+								"<ul><li><a href=\"#subsubsubtitle_of_level_5\">subsubsubtitle of level 5</a></li></ul>" +
+							"</ul>" +
+						"</ul>" +
+					"</ul>",
+					render);
+			
+			String renderedText=toc.render();
+			assertRef("Main_title", "Main title", renderedText);
+			assertRef("Firt_subtitle", "Firt subtitle",renderedText);
+			assertRef("subtitle_of_level_3", "subtitle of level 3", renderedText);
+
+		} catch (Exception e) {
+			fail(e.getMessage());		
+		}
+		}
+	
 	public void testNoLineBreak() {
 		StringBuffer pageContents = new StringBuffer();
 		pageContents.append("!2 Sub Title");

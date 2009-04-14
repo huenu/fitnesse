@@ -1,15 +1,13 @@
 // Copyright (C) 2003,2004,2005 by Object Mentor, Inc. All rights reserved.
 // Released under the terms of the GNU General Public License version 2 or later.
 package fitnesse.wikitext.widgets;
- 
+
 import junit.framework.TestCase;
- 
 import java.util.regex.Pattern;
- 
-public class HeaderWidgetTest extends TestCase
-{
-  public void testRegexp() throws Exception
-  {
+
+public class HeaderWidgetTest extends TestCase {
+  public void testRegexp() throws Exception {
+
     assertTrue(Pattern.matches(HeaderWidget.REGEXP, "!1 some text\n"));
     assertTrue(Pattern.matches(HeaderWidget.REGEXP, "!2 \n"));
     assertTrue(Pattern.matches(HeaderWidget.REGEXP, "!3 text\n"));
