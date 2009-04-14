@@ -1,3 +1,5 @@
+// Copyright (C) 2003-2009 by Object Mentor, Inc. All rights reserved.
+// Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.responders.run;
 
 import fitnesse.html.HtmlPage;
@@ -12,6 +14,7 @@ import fitnesse.wiki.PageData;
 import fitnesse.wiki.PathParser;
 import fitnesse.wiki.WikiPage;
 import fitnesse.wiki.WikiPagePath;
+import fitnesse.FitNesseContext;
 
 public abstract class TestHtmlFormatter extends BaseFormatter {
 
@@ -23,9 +26,9 @@ public abstract class TestHtmlFormatter extends BaseFormatter {
   
   private static String TESTING_INTERUPTED = "<strong>Testing was interupted and results are incomplete.</strong><br/>";
 
-  public TestHtmlFormatter(final WikiPage page,
-      final HtmlPageFactory pageFactory) throws Exception {
-    super(page);
+  public TestHtmlFormatter(FitNesseContext context, final WikiPage page,
+                           final HtmlPageFactory pageFactory) throws Exception {
+    super(context, page);
     this.pageFactory = pageFactory;
   }
 
@@ -45,13 +48,17 @@ public abstract class TestHtmlFormatter extends BaseFormatter {
 
     return testSummaryDiv;
   }
+  
+  protected void updateSummaryDiv(String html) throws Exception {
+    writeData(HtmlUtil.makeReplaceElementScript("test-summary", html).html());
+  }
 
   protected String testPageSummary() {
     return "";
   }
 
   public void announceStartNewTest(WikiPage test) throws Exception {
-    writeData(HtmlUtil.getHtmlOfInheritedPage("PageHeader", getPage()));
+    writeData(getPage().getData().getHeaderPageHtml());
   }
 
   public void announceStartTestSystem(TestSystem testSystem, String testSystemName, String testRunner)
@@ -101,7 +108,7 @@ public abstract class TestHtmlFormatter extends BaseFormatter {
     html.header.use(HtmlUtil
         .makeBreadCrumbsWithPageType(fullPathName, pageType));
     PageData data = getPage().getData();
-    html.actions.use(HtmlUtil.makeActions(data));
+    html.actions.use(HtmlUtil.makeActions(getPage().getActions()));
     WikiImportProperty.handleImportProperties(html, getPage(), data);
     return html;
   }
@@ -118,7 +125,7 @@ public abstract class TestHtmlFormatter extends BaseFormatter {
   }
 
   protected void finishWritingOutput() throws Exception {
-    writeData(HtmlUtil.getHtmlOfInheritedPage("PageFooter", getPage()));
+    writeData(getPage().getData().getFooterPageHtml());
     writeData(htmlPage.postDivision);
   }
 

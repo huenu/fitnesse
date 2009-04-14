@@ -11,28 +11,31 @@ import fitnesse.html.HtmlTag;
 import fitnesse.html.HtmlUtil;
 import fitnesse.responders.run.SuiteHtmlFormatter;
 import fitnesse.responders.run.TestSummary;
+import fitnesse.FitNesseContext;
 
 public class HtmlResultFormatter implements ResultFormatter {
   private ContentBuffer buffer;
   private boolean closed = false;
   private SuiteHtmlFormatter suiteFormatter;
+  private FitNesseContext context;
   private String host;
   private String rootPath;
-  private HtmlPage page;
+  private HtmlPage htmlPage;
 
-  public HtmlResultFormatter(HtmlPageFactory pageFactory, String host, String rootPath) throws Exception {
+  public HtmlResultFormatter(FitNesseContext context, String host, String rootPath) throws Exception {
+    this.context = context;
     this.host = host;
     this.rootPath = rootPath;
 
     buffer = new ContentBuffer(".html");
 
-    createPage(pageFactory, rootPath);
+    createPage(context.htmlPageFactory, rootPath);
     suiteFormatter = createCustomFormatter();
     suiteFormatter.writeHead(null);
   }
 
   private SuiteHtmlFormatter createCustomFormatter() throws Exception {
-    SuiteHtmlFormatter formatter = new SuiteHtmlFormatter(null, null) {
+    SuiteHtmlFormatter formatter = new SuiteHtmlFormatter(context, null, null) {
       @Override
       protected void writeData(String output) throws Exception {
         buffer.append(output);
@@ -40,26 +43,26 @@ public class HtmlResultFormatter implements ResultFormatter {
       
       @Override
       protected HtmlPage buildHtml(String pageType) throws Exception {
-        return page;
+        return htmlPage;
       }
     };
     return formatter;
   }
   
   private void createPage(HtmlPageFactory pageFactory, String rootPath) throws Exception {
-    page = pageFactory.newPage();
-    page.head.use(makeBaseTag());
-    page.head.add(makeContentTypeMetaTag());
-    page.title.use(rootPath);
-    page.head.add(page.title);
-    page.head.add(page.makeCssLink("/files/css/fitnesse_print.css", "screen"));
+    htmlPage = pageFactory.newPage();
+    htmlPage.head.use(makeBaseTag());
+    htmlPage.head.add(makeContentTypeMetaTag());
+    htmlPage.title.use(rootPath);
+    htmlPage.head.add(htmlPage.title);
+    htmlPage.head.add(htmlPage.makeCssLink("/files/css/fitnesse_print.css", "screen"));
 
     HtmlTag script = new HtmlTag("script", scriptContent);
     script.addAttribute("language", "javascript");
-    page.head.add(script);
-    page.body.addAttribute("onload", "localizeInPageLinks()");
+    htmlPage.head.add(script);
+    htmlPage.body.addAttribute("onload", "localizeInPageLinks()");
 
-    page.header.use(HtmlUtil.makeBreadCrumbsWithPageType(rootPath, "Command Line Test Results"));
+    htmlPage.header.use(HtmlUtil.makeBreadCrumbsWithPageType(rootPath, "Command Line Test Results"));
   }
 
   private HtmlTag makeContentTypeMetaTag() {

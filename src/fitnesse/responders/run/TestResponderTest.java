@@ -21,13 +21,16 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import static util.RegexTestCase.*;
 import util.XmlUtil;
 
+import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class TestResponderTest {
+public class
+  TestResponderTest {
   private WikiPage root;
   private MockRequest request;
   private TestResponder responder;
@@ -73,10 +76,20 @@ public class TestResponderTest {
   }
 
   private void doSimpleRun(String fixtureTable) throws Exception {
+    doSimpleRunWithTags(fixtureTable, null);
+  }
+
+  private void doSimpleRunWithTags(String fixtureTable, String tags) throws Exception {
     simpleRunPageName = "TestPage";
     testPage = crawler.addPage(root, PathParser.parse(simpleRunPageName), classpathWidgets() + fixtureTable);
+    if (tags != null) {
+      PageData pageData = testPage.getData();
+      pageData.setAttribute(PageData.PropertySUITES, tags);
+      testPage.commit(pageData);
+    }
     request.setResource(testPage.getName());
 
+    responder.turnOffChunkingForTests();
     response = responder.makeResponse(context, request);
     sender = new MockResponseSender();
     sender.doSending(response);
@@ -213,24 +226,50 @@ public class TestResponderTest {
     Element counts = XmlUtil.getElementByTagName(result, "counts");
     assertCounts(counts, "1", "0", "0", "0");
 
+    Element tags = XmlUtil.getElementByTagName(result, "tags");
+    assertNull(tags);
+
     String content = XmlUtil.getTextValue(result, "content");
     assertSubString("PassFixture", content);
     String relativePageName = XmlUtil.getTextValue(result, "relativePageName");
     assertEquals("TestPage", relativePageName);
   }
 
+  private String slimDecisionTable() {
+    return "!define TEST_SYSTEM {slim}\n" +
+      "|!-DT:fitnesse.slim.test.TestSlim-!|\n" +
+      "|string|get string arg?|\n" +
+      "|right|wrong|\n" +
+      "|wow|wow|\n";
+  }
+
   @Test
   public void slimXmlFormat() throws Exception {
+    request.addInput("format", "xml");
     String instructionContents[] = {"make", "table", "reset", "setString", "execute", "getStringArg", "reset", "setString", "execute", "getStringArg"};
-    String instructionResults[] = {"OK","EXCEPTION","EXCEPTION","VOID","VOID","right","EXCEPTION","VOID","VOID","wow"};
+    String instructionResults[] = {"OK", "EXCEPTION", "EXCEPTION", "VOID", "VOID", "right", "EXCEPTION", "VOID", "VOID", "wow"};
 
     request.addInput("format", "xml");
-    doSimpleRun(slimDecisionTable());
+    doSimpleRunWithTags(slimDecisionTable(), "zoo");
     assertXmlDocumentHeaderIsCorrect();
 
     Element result = XmlUtil.getElementByTagName(testResultsElement, "result");
     Element counts = XmlUtil.getElementByTagName(result, "counts");
     assertCounts(counts, "2", "1", "0", "0");
+
+    String tags = XmlUtil.getTextValue(result, "tags");
+    assertEquals("zoo", tags);
+
+    Element tables = XmlUtil.getElementByTagName(result, "tables");
+    assertNotNull(tables);
+    NodeList tableList = tables.getElementsByTagName("table");
+    assertNotNull(tableList);
+    assertEquals(1, tableList.getLength());
+    Element tableElement = (Element) tableList.item(0);
+    String tableName = XmlUtil.getTextValue(tableElement, "name");
+    assertNotNull(tableName);
+    assertEquals("decisionTable_0", tableName);
+    assertEquals("[[pass(DT:fitnesse.slim.test.TestSlim)],[string,get string arg?],[right,[right] fail(expected [wrong])],[wow,pass(wow)]]", tableElementToString(tableElement));
 
     Element instructions = XmlUtil.getElementByTagName(result, "instructions");
     NodeList instructionList = instructions.getElementsByTagName("instructionResult");
@@ -246,17 +285,93 @@ public class TestResponderTest {
       assertResultHas(instructionElement, instructionResults[i]);
     }
 
-    checkExpectation(instructionList, 0, "decisionTable_0_0", "ConstructionExpectation", "0", "0", "OK", "DT:fitnesse.slim.test.TestSlim", "pass(DT:fitnesse.slim.test.TestSlim)");
-    checkExpectation(instructionList, 3, "decisionTable_0_3", "VoidReturnExpectation", "0", "2", "/__VOID__/", "right", "right");
-    checkExpectation(instructionList, 5, "decisionTable_0_5", "ReturnedValueExpectation", "1", "2", "right", "wrong", "[right] fail(expected [wrong])");
-    checkExpectation(instructionList, 7, "decisionTable_0_7", "VoidReturnExpectation", "0", "3", "/__VOID__/", "wow", "wow");
-    checkExpectation(instructionList, 9, "decisionTable_0_9", "ReturnedValueExpectation", "1", "3", "wow", "wow", "pass(wow)");
+    checkExpectation(instructionList, 0, "decisionTable_0_0", "0", "0", "right", "ConstructionExpectation", "OK", "DT:fitnesse.slim.test.TestSlim", "pass(DT:fitnesse.slim.test.TestSlim)");
+    checkExpectation(instructionList, 3, "decisionTable_0_3", "0", "2", "ignored", "VoidReturnExpectation", "/__VOID__/", "right", "right");
+    checkExpectation(instructionList, 5, "decisionTable_0_5", "1", "2", "wrong", "ReturnedValueExpectation", "right", "wrong", "[right] fail(expected [wrong])");
+    checkExpectation(instructionList, 7, "decisionTable_0_7", "0", "3", "ignored", "VoidReturnExpectation", "/__VOID__/", "wow", "wow");
+    checkExpectation(instructionList, 9, "decisionTable_0_9", "1", "3", "right", "ReturnedValueExpectation", "wow", "wow", "pass(wow)");
   }
 
-  private void checkExpectation(NodeList instructionList, int index, String id, String type, String col, String row, String actual, String expected, String message) throws Exception {
-    Element instructionElement = (Element)instructionList.item(index);
+  private String tableElementToString(Element tableElement) {
+    StringBuilder result = new StringBuilder();
+    result.append("[");
+    rowsToString(tableElement, result);
+    result.append("]");
+    return result.toString();
+  }
+
+  private void rowsToString(Element tableElement, StringBuilder result) {
+    NodeList rows = tableElement.getElementsByTagName("row");
+    for (int row = 0; row < rows.getLength(); row++) {
+      result.append("[");
+      Element rowElement = (Element)rows.item(row);
+      colsToString(result, rowElement);
+      result.append("],");
+    }
+    result.deleteCharAt(result.length()-1);
+  }
+
+  private void colsToString(StringBuilder result, Element rowElement) {
+    NodeList cols = rowElement.getElementsByTagName("col");
+    for (int col = 0; col < cols.getLength(); col++) {
+      Element colElement = (Element)cols.item(col);
+      result.append(colElement.getFirstChild().getNodeValue());
+      result.append(",");
+    }
+    result.deleteCharAt(result.length()-1);
+  }
+
+  private String slimScenarioTable() {
+    return "!define TEST_SYSTEM {slim}\n" +
+      "\n" +
+      "!|scenario|f|a|\n" +
+      "|check|echo int|@a|@a|\n" +
+      "\n" +
+      "!|script|fitnesse.slim.test.TestSlim|\n" +
+      "\n" +
+      "!|f|\n" +
+      "|a|\n" +
+      "|1|\n" +
+      "|2|\n";
+  }
+
+  @Test
+  public void slimScenarioXmlFormat() throws Exception {
+    request.addInput("format", "xml");
+    String instructionContents[] = {"make", "call", "call"};
+    String instructionResults[] = {"OK", "1", "2"};
+
+    request.addInput("format", "xml");
+    doSimpleRun(slimScenarioTable());
+    assertXmlDocumentHeaderIsCorrect();
+
+    Element result = XmlUtil.getElementByTagName(testResultsElement, "result");
+    Element counts = XmlUtil.getElementByTagName(result, "counts");
+    assertCounts(counts, "3", "0", "0", "0");
+    Element instructions = XmlUtil.getElementByTagName(result, "instructions");
+    NodeList instructionList = instructions.getElementsByTagName("instructionResult");
+    assertEquals(instructionContents.length, instructionList.getLength());
+
+    for (int i = 0; i < instructionContents.length; i++) {
+      Element instructionElement = (Element) instructionList.item(i);
+      assertInstructionHas(instructionElement, instructionContents[i]);
+    }
+
+    for (int i = 0; i < instructionResults.length; i++) {
+      Element instructionElement = (Element) instructionList.item(i);
+      assertResultHas(instructionElement, instructionResults[i]);
+    }
+
+    checkExpectation(instructionList, 0, "scriptTable_1_0", "1", "0", "right", "ConstructionExpectation", "OK", "fitnesse.slim.test.TestSlim", "pass(fitnesse.slim.test.TestSlim)");
+    checkExpectation(instructionList, 1, "decisionTable_2_0/scriptTable_0_0", "3", "1", "right", "ReturnedValueExpectation", "1", "1", "pass(1)");
+    checkExpectation(instructionList, 2, "decisionTable_2_1/scriptTable_0_0", "3", "1", "right", "ReturnedValueExpectation", "2", "2", "pass(2)");
+  }
+
+  private void checkExpectation(NodeList instructionList, int index, String id, String col, String row, String status, String type, String actual, String expected, String message) throws Exception {
+    Element instructionElement = (Element) instructionList.item(index);
     Element expectation = XmlUtil.getElementByTagName(instructionElement, "expectation");
     assertEquals(id, XmlUtil.getTextValue(expectation, "instructionId"));
+    assertEquals(status, XmlUtil.getTextValue(expectation, "status"));
     assertEquals(type, XmlUtil.getTextValue(expectation, "type"));
     assertEquals(col, XmlUtil.getTextValue(expectation, "col"));
     assertEquals(row, XmlUtil.getTextValue(expectation, "row"));
@@ -369,7 +484,7 @@ public class TestResponderTest {
     assertHasRegexp("<script>.*?document\\.getElementById\\(\"test-summary\"\\)\\.className = \".*?\";.*?</script>", results);
   }
 
-  
+
   @Test
   public void testTestSummaryHasRightClass() throws Exception {
     doSimpleRun(passFixtureTable());
@@ -378,18 +493,58 @@ public class TestResponderTest {
 
   @Test
   public void testTestHasStopped() throws Exception {
-    
-    new Thread(makeStopTestsRunnable()).start();
-    
-    doSimpleRun(waitFixtureTable());
+
+    String semaphoreName = "testTestHasStopped.semaphore";
+    File semaphore = new File(semaphoreName);
+    if (semaphore.exists())
+      semaphore.delete();
+
+    new Thread(makeStopTestsRunnable(semaphore)).start();
+
+    doSimpleRun(createAndWaitFixture(semaphoreName));
     assertHasRegexp("Testing was interupted", results);
+    semaphore.delete();
   }
 
-  
+  private String createAndWaitFixture(String semaphoreName) {
+    return "!define TEST_SYSTEM {slim}\n" +
+      "!|fitnesse.testutil.CreateFileAndWaitFixture|" + semaphoreName + "|\n";
+  }
+
+  private Runnable makeStopTestsRunnable(File semaphore) {
+    return new WaitForSemaphoreThenStopProcesses(semaphore);
+  }
+
+  private class WaitForSemaphoreThenStopProcesses implements Runnable {
+    private File semaphore;
+
+    public WaitForSemaphoreThenStopProcesses(File semaphore) {
+      this.semaphore = semaphore;
+    }
+
+    public void run() {
+      waitForSemaphore();
+      context.runningTestingTracker.stopAllProcesses();
+    }
+
+    private void waitForSemaphore() {
+      try {
+        int i=1000;
+        while (!semaphore.exists())  {
+          if (--i <= 0)
+            break;
+          Thread.sleep(5);
+        }
+      } catch (InterruptedException e) {
+      }
+    }
+  }
+
+
   @Test
   public void testAuthentication_RequiresTestPermission() throws Exception {
     assertTrue(responder instanceof SecureResponder);
-    SecureOperation operation = ((SecureResponder) responder).getSecureOperation();
+    SecureOperation operation = responder.getSecureOperation();
     assertEquals(SecureTestOperation.class, operation.getClass());
   }
 
@@ -434,6 +589,14 @@ public class TestResponderTest {
     assertHasRegexp("Output of SuiteTearDown", errorLogContent);
   }
 
+
+  private String simpleSlimDecisionTable() {
+    return "!define TEST_SYSTEM {slim}\n" +
+      "|!-DT:fitnesse.slim.test.TestSlim-!|\n" +
+      "|string|get string arg?|\n" +
+      "|wow|wow|\n";
+  }
+
   @Test
   public void testDoSimpleSlimTable() throws Exception {
     doSimpleRun(simpleSlimDecisionTable());
@@ -462,37 +625,4 @@ public class TestResponderTest {
   private String passFixtureTable() {
     return "|!-fitnesse.testutil.PassFixture-!|\n";
   }
-
-  private String waitFixtureTable() {
-    return "|!-fitnesse.testutil.WaitFixture-!|\n";
-  }
-  
-  private Runnable makeStopTestsRunnable() {
-    return new Runnable() {
-      public void run() {
-        try {
-          Thread.sleep(50);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        context.runningTestingTracker.stopAllProcesses();
-      }
-    };
-  }
-  
-  private String simpleSlimDecisionTable() {
-    return "!define TEST_SYSTEM {slim}\n" +
-      "|!-DT:fitnesse.slim.test.TestSlim-!|\n" +
-      "|string|get string arg?|\n" +
-      "|wow|wow|\n";
-  }
-
-  private String slimDecisionTable() {
-    return "!define TEST_SYSTEM {slim}\n" +
-      "|!-DT:fitnesse.slim.test.TestSlim-!|\n" +
-      "|string|get string arg?|\n" +
-      "|right|wrong|\n" +
-      "|wow|wow|\n";
-  }
-
 }

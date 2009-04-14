@@ -79,9 +79,23 @@ public class ListExecutorTest {
   }
 
   @Test
+  public void exceptionInConstructorIsPassedThrough() throws Exception {
+    statements.clear();
+    expectedResults.clear();
+    statements.add(list("m1", "make", "x", "fitnesse.slim.test.ConstructorThrows", "thrown message"));
+    assertExceptionReturned("thrown message", "m1");
+  }
+
+  @Test
   public void oneFunctionCall() throws Exception {
     statements.add(list("id", "call", "testSlim", "returnString"));
     respondsWith(list(list("id", "string")));
+  }
+
+  @Test
+  public void oneFunctionCallWithBlankArgument() throws Exception {
+    statements.add(list("id", "call", "testSlim", "echoString", ""));
+    respondsWith(list(list("id", "")));
   }
 
   @Test
@@ -129,6 +143,13 @@ public class ListExecutorTest {
     respondsWith(list(list("id1", "Bob"), list("id2", "Martin"), list("id3", "name: Bob Martin")));
   }
 
+  @Test
+  public void canReplaceSymbolWhenValueIsNull() throws Exception {
+    statements.add(list("id1", "make", "nf", "NullFixture"));
+    statements.add(list("id2", "callAndAssign", "v", "nf", "getNull"));
+    statements.add(list("id3", "call", "testSlim", "echoString", "$v"));
+    respondsWith(list(list("id1", "OK"), list("id2", null), list("id3", "null")));
+  }
 
   @Test
   public void passAndReturnList() throws Exception {

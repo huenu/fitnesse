@@ -10,6 +10,7 @@ import fitnesse.responders.ResponderFactory;
 import fitnesse.responders.run.RunningTestingTracker;
 import fitnesse.responders.run.SocketDealer;
 import fitnesse.wiki.WikiPage;
+import org.apache.velocity.app.VelocityEngine;
 
 public class FitNesseContext {
   public FitNesse fitnesse;
@@ -28,12 +29,28 @@ public class FitNesseContext {
   public static String recentChangesDateFormat = "kk:mm:ss EEE, MMM dd, yyyy";
   public static String rfcCompliantDateFormat = "EEE, d MMM yyyy HH:mm:ss Z";
   public static FitNesseContext globalContext;
+  private VelocityEngine velocityEngine;
 
   public FitNesseContext() {
+    this(null);
   }
 
   public FitNesseContext(WikiPage root) {
     this.root = root;
+  }
+
+  public VelocityEngine getVelocityEngine() {
+    if (velocityEngine == null) {
+      velocityEngine = new VelocityEngine();
+      String templatePath = String.format("%s/%s/files/templates", rootPath, rootPageName);
+      velocityEngine.setProperty(VelocityEngine.FILE_RESOURCE_LOADER_PATH, templatePath);
+      try {
+        velocityEngine.init();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return velocityEngine;
   }
 
   public String toString() {
@@ -50,5 +67,9 @@ public class FitNesseContext {
 
   public static int getPort() {
     return globalContext != null ? globalContext.port : -1;
+  }
+
+  public void setVelocityEngine(VelocityEngine velocityEngine) {
+    this.velocityEngine = velocityEngine;
   }
 }

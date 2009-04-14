@@ -3,17 +3,20 @@
 package fitnesse.responders.run;
 
 import fitnesse.wiki.WikiPage;
+import fitnesse.FitNesseContext;
 
 public abstract class BaseFormatter implements ResultsListener {
 
-  private final WikiPage page;
+  protected final WikiPage page;
+  protected FitNesseContext context;
 
   public abstract void writeHead(String pageType) throws Exception;
 
   public abstract void allTestingComplete() throws Exception;
 
-  protected BaseFormatter(final WikiPage page) {
+  protected BaseFormatter(FitNesseContext context, final WikiPage page) {
     this.page = page;
+    this.context = context;
   }
   
   protected WikiPage getPage() {
@@ -27,5 +30,7 @@ public abstract class BaseFormatter implements ResultsListener {
       e.printStackTrace();
     }
   }
-
+  
+  public void announceNumberTestsToRun(int testsToRun) {
+  }
 }

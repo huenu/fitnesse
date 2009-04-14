@@ -20,7 +20,7 @@ public abstract class SlimTable {
   protected Table table;
   private SlimTestContext testContext;
   protected String id;
-  protected String tableName;
+  private String tableName;
   private int instructionNumber = 0;
   protected List<Object> instructions;
   protected static final Pattern symbolAssignmentPattern = Pattern.compile("\\A\\s*\\$(\\w+)\\s*=\\s*\\Z");
@@ -42,7 +42,8 @@ public abstract class SlimTable {
 
   public void addChildTable(SlimTable table, int row) throws Exception {
     table.id = id + "." + children.size();
-    table.tableName = table.tableName + "." + children.size();
+    table.tableName = makeInstructionTag(instructionNumber)+"/"+table.tableName;
+    instructionNumber++;
     table.parent = this;
     children.add(table);
 
@@ -96,7 +97,7 @@ public abstract class SlimTable {
     return makeInstructionTag(instructionNumber);
   }
 
-  protected String getTableName() {
+  public String getTableName() {
     return tableName;
   }
 
@@ -243,7 +244,7 @@ public abstract class SlimTable {
   }
 
   protected ReturnedValueExpectation makeReturnedValueExpectation(
-    String expected, String instructionTag, int col, int row) {
+    String instructionTag, int col, int row) {
     return new ReturnedValueExpectation(instructionTag, col, row);
   }
 
@@ -464,7 +465,7 @@ public abstract class SlimTable {
     }
 
     public String getEvaluationMessage() {
-      return evaluationMessage;
+      return evaluationMessage == null ? "" : evaluationMessage;
     }
   }
 

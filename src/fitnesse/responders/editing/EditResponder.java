@@ -24,7 +24,7 @@ import fitnesse.wikitext.Utils;
 
 public class EditResponder implements SecureResponder {
   public static final String CONTENT_INPUT_NAME = "pageContent";
-  public static final String SAVE_ID = "saveId";
+  public static final String TIME_STAMP = "saveTime";
   public static final String TICKET_ID = "ticketId";
 
   protected String content;
@@ -37,7 +37,7 @@ public class EditResponder implements SecureResponder {
   }
 
   public Response makeResponse(FitNesseContext context, Request request) throws Exception {
-    boolean nonExistent = request.hasInput("nonExistent") ? true : false;
+    boolean nonExistent = request.hasInput("nonExistent");
     return doMakeResponse(context, request, nonExistent);
   }
 
@@ -90,14 +90,14 @@ public class EditResponder implements SecureResponder {
     String title = firstTimeForNewPage ? "Page doesn't exist. Edit " : "Edit ";
     html.title.use(title + resource + ":");
     html.body.addAttribute("onload", "document.f." + CONTENT_INPUT_NAME + ".focus()");
-    HtmlTag header = makeHeader(resource, title, firstTimeForNewPage);
+    HtmlTag header = makeHeader(resource, title);
     html.header.use(header);
     html.main.use(makeEditForm(resource, firstTimeForNewPage, context.defaultNewPageContent));
 
     return html.html();
   }
 
-  private HtmlTag makeHeader(String resource, String title, boolean firstTimeForNewPage) throws Exception {
+  private HtmlTag makeHeader(String resource, String title) throws Exception {
     return HtmlUtil.makeBreadCrumbsWithPageType(resource, title + "Page:");
   }
 
@@ -107,7 +107,7 @@ public class EditResponder implements SecureResponder {
     form.addAttribute("action", resource);
     form.addAttribute("method", "post");
     form.add(HtmlUtil.makeInputTag("hidden", "responder", "saveData"));
-    form.add(HtmlUtil.makeInputTag("hidden", SAVE_ID, String.valueOf(SaveRecorder.newIdNumber())));
+    form.add(HtmlUtil.makeInputTag("hidden", TIME_STAMP, String.valueOf(SaveRecorder.timeStamp())));
     form.add(HtmlUtil.makeInputTag("hidden", TICKET_ID, String.valueOf((SaveRecorder.newTicket()))));
     if (request.hasInput("redirectToReferer") && request.hasHeader("Referer")) {
       String redirectUrl = request.getHeader("Referer").toString();
@@ -165,12 +165,12 @@ public class EditResponder implements SecureResponder {
     return scripts;
   }
 
-  private void includeJavaScriptFile(String jsFile, TagGroup scripts) {
+  protected void includeJavaScriptFile(String jsFile, TagGroup scripts) {
     HtmlTag scriptTag = HtmlUtil.makeJavascriptLink(jsFile);
     scripts.add(scriptTag);
   }
 
-  private HtmlTag makeSaveButton() {
+  protected HtmlTag makeSaveButton() {
     HtmlTag saveButton = HtmlUtil.makeInputTag("submit", "save", "Save");
     saveButton.addAttribute("tabindex", "2");
     saveButton.addAttribute("accesskey", "s");
