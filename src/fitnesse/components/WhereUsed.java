@@ -16,7 +16,9 @@ import fitnesse.wikitext.widgets.PreformattedWidget;
 import fitnesse.wikitext.widgets.WidgetRoot;
 import fitnesse.wikitext.widgets.WikiWordWidget;
 
-public class WhereUsed implements FitNesseTraversalListener, SearchObserver, WidgetVisitor {
+// TODO: Check if this can be safely replaced with WhereUsedPageFinder
+@Deprecated
+public class WhereUsed implements TraversalListener, SearchObserver, WidgetVisitor {
   private WikiPage root;
   private WikiPage subjectPage;
   private SearchObserver observer;
@@ -59,6 +61,7 @@ public class WhereUsed implements FitNesseTraversalListener, SearchObserver, Wid
     return hits;
   }
 
+  @SuppressWarnings("unchecked")
   public void processPage(WikiPage currentPage) throws Exception {
     this.currentPage = currentPage;
     String content = currentPage.getData().getContent();

@@ -13,11 +13,11 @@ public abstract class SuiteXmlFormatter extends XmlFormatter {
   }
 
   private void addFinalCounts() throws Exception {
-    testResponse.finalCounts = new TestResponse.Counts();
-    testResponse.finalCounts.right = xmlPageCounts.right;
-    testResponse.finalCounts.wrong = xmlPageCounts.wrong;
-    testResponse.finalCounts.ignores = xmlPageCounts.ignores;
-    testResponse.finalCounts.exceptions = xmlPageCounts.exceptions;
+    testResponse.finalCounts = new TestSummary();
+    finalSummary.right = testResponse.finalCounts.right = xmlPageCounts.getRight();
+    finalSummary.wrong = testResponse.finalCounts.wrong = xmlPageCounts.getWrong();
+    finalSummary.ignores = testResponse.finalCounts.ignores = xmlPageCounts.getIgnores();
+    finalSummary.exceptions = testResponse.finalCounts.exceptions = xmlPageCounts.getExceptions();
   }
   
   @Override

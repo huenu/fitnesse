@@ -182,7 +182,7 @@ public class SlimTestSystemTest {
         "|x?|\n" +
         "|1|\n"
     );
-    assertEquals(0, responder.getTestSummary().exceptions);
+    assertEquals(0, responder.getTestSummary().getExceptions());
   }
 
   @Test
@@ -192,7 +192,7 @@ public class SlimTestSystemTest {
         "|x?|\n" +
         "|1|\n"
     );
-    assertEquals(0, responder.getTestSummary().exceptions);
+    assertEquals(0, responder.getTestSummary().getExceptions());
   }
 
   @Test
@@ -202,7 +202,7 @@ public class SlimTestSystemTest {
         "|x|\n" +
         "|1|\n"
     );
-    assertEquals(0, responder.getTestSummary().exceptions);
+    assertEquals(0, responder.getTestSummary().getExceptions());
   }
 
   @Test
@@ -212,7 +212,7 @@ public class SlimTestSystemTest {
         "|x?|\n" +
         "|1|\n"
     );
-    assertEquals(1, responder.getTestSummary().exceptions);
+    assertEquals(1, responder.getTestSummary().getExceptions());
     assertTestResultsContain("EXECUTE_THROWS");
   }
 
@@ -247,7 +247,42 @@ public class SlimTestSystemTest {
     );
     assertTestResultsContain("<span class=\"error\">Method setNoSuchVar[1] not found in fitnesse.slim.test.TestSlim");
   }
+  
+  @Test
+  public void tableWithStopTestMessageException() throws Exception {
+    getResultsForPageContents("!|DT:fitnesse.slim.test.TestSlim|\n" +
+        "|throwStopTestExceptionWithMessage?|\n" +
+        "| once |\n" +
+        "| twice |\n");
+    assertTestResultsContain("<td>once <span class=\"fail\">Stop Test</span></td>");
+    assertTestResultsContain("<td>twice <span class=\"ignore\">Test not run</span>");
+  }
 
+  @Test
+  public void tableWithMessageException() throws Exception {
+    getResultsForPageContents("!|DT:fitnesse.slim.test.TestSlim|\n" +
+        "|throwExceptionWithMessage?|\n" +
+        "| once |\n");
+    assertTestResultsContain("<td>once <span class=\"error\">Test message</span></td>");
+  }
+
+  @Test
+  public void tableWithStopTestExceptionThrown() throws Exception {
+    getResultsForPageContents("!|DT:fitnesse.slim.test.TestSlim|\n" +
+      "|throwNormal?| throwStopping? |\n" +
+      "| first | second  |\n" +
+      "| should fail1| true           |\n" + 
+      "\n\n" +
+      "!|DT:fitnesse.slim.test.ThrowException|\n" +
+      "|throwNormal?|\n" +
+      "| should fail2|\n"
+    );
+    assertTestResultsContain("<td><span class=\"error\">Exception: <a href");
+    assertTestResultsContain("<td><span class=\"error\">Exception: <a href");
+    assertTestResultsContain("<td>should fail1 <span class=\"ignore\">Test not run</span></td>");
+    assertTestResultsContain("<td>should fail2 <span class=\"ignore\">Test not run</span></td>");
+  }
+  
   @Test
   public void tableWithSymbolSubstitution() throws Exception {
     getResultsForPageContents(
@@ -355,6 +390,15 @@ public class SlimTestSystemTest {
         "|1|\n");
     assertTestResultsContain("A Reportable Exception");
   }
+  
+  @Test
+  public void checkTestClassPrecededByDefine() throws Exception {
+    getResultsForPageContents("!define PI {3.141592}\n" +
+    "!path classes\n" +
+    "!path fitnesse.jar\n" +
+    "|fitnesse.testutil.PassFixture|\n");
+    assertTestResultsContain("PassFixture");
+  }
 
   @Test
   public void emptyScenarioTable() throws Exception {
@@ -367,7 +411,6 @@ public class SlimTestSystemTest {
     getResultsForPageContents("|Scenario|myScenario|\n");
     assertTrue("scenario should be registered", responder.testSystem.getScenarios().containsKey("myScenario"));
   }
-
 
   private static class DummyListener implements TestSystemListener {
     public void acceptOutputFirst(String output) throws Exception {

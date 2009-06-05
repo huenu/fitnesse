@@ -9,16 +9,21 @@ import fitnesse.authentication.SecureResponder;
 import fitnesse.html.HtmlPage;
 import fitnesse.html.HtmlUtil;
 import fitnesse.html.SetupTeardownIncluder;
+import fitnesse.html.HtmlTag;
 import fitnesse.http.Request;
 import fitnesse.http.Response;
 import fitnesse.http.SimpleResponse;
 import fitnesse.responders.editing.EditResponder;
+import fitnesse.threadlocal.ThreadLocalUtil;
 import fitnesse.wiki.PageCrawler;
 import fitnesse.wiki.PageData;
 import fitnesse.wiki.PathParser;
 import fitnesse.wiki.VirtualEnabledPageCrawler;
 import fitnesse.wiki.WikiPage;
 import fitnesse.wiki.WikiPagePath;
+import fitnesse.wikitext.widgets.Constants;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.VelocityContext;
 
 public class WikiPageResponder implements SecureResponder {
   protected WikiPage page;
@@ -64,13 +69,18 @@ public class WikiPageResponder implements SecureResponder {
   }
 
   private SimpleResponse makePageResponse(FitNesseContext context) throws Exception {
-    pageTitle = PathParser.render(crawler.getFullPath(page));
-    String html = makeHtml(context);
+    try {
+      pageTitle = PathParser.render(crawler.getFullPath(page));
+      ThreadLocalUtil.setValue(Constants.ENTRY_PAGE, pageTitle);
+      String html = makeHtml(context);
 
-    SimpleResponse response = new SimpleResponse();
-    response.setMaxAge(0);
-    response.setContent(html);
-    return response;
+      SimpleResponse response = new SimpleResponse();
+      response.setMaxAge(0);
+      response.setContent(html);
+      return response;
+    } finally {
+      ThreadLocalUtil.clear();
+    }
   }
 
   public String makeHtml(FitNesseContext context) throws Exception {
@@ -80,9 +90,15 @@ public class WikiPageResponder implements SecureResponder {
     String fullPathName = PathParser.render(fullPath);
     html.title.use(fullPathName);
     html.header.use(HtmlUtil.makeBreadCrumbsWithCurrentPageNotLinked(fullPathName));
+    html.header.add("<a style=\"font-size:small;\" onclick=\"popup('addChildPopup')\"> [add child]</a>");
     html.actions.use(HtmlUtil.makeActions(page.getActions()));
     SetupTeardownIncluder.includeInto(pageData);
     html.main.use(generateHtml(pageData));
+    VelocityContext velocityContext = new VelocityContext();
+
+    velocityContext.put("page_name", page.getName());
+    velocityContext.put("full_path", fullPathName);
+    html.main.add(context.translateTemplate(velocityContext, "addChildPagePopup.vm"));
     handleSpecialProperties(html, page);
     return html.html();
   }

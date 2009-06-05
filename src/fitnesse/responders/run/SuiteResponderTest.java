@@ -2,23 +2,39 @@
 // Released under the terms of the CPL Common Public License version 1.0.
 package fitnesse.responders.run;
 
+import static fitnesse.responders.run.TestResponderTest.XmlTestUtilities.assertCounts;
+import static fitnesse.responders.run.TestResponderTest.XmlTestUtilities.getXmlDocumentFromResults;
+import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static util.RegexTestCase.assertDoesntHaveRegexp;
+import static util.RegexTestCase.assertHasRegexp;
+import static util.RegexTestCase.assertNotSubString;
+import static util.RegexTestCase.assertSubString;
+import static util.RegexTestCase.divWithIdAndContent;
+
 import fitnesse.FitNesseContext;
 import fitnesse.http.MockRequest;
 import fitnesse.http.MockResponseSender;
 import fitnesse.http.Response;
+import fitnesse.testutil.FitNesseUtil;
 import fitnesse.testutil.FitSocketReceiver;
-import fitnesse.wiki.*;
-import static junit.framework.Assert.fail;
+import fitnesse.wiki.InMemoryPage;
+import fitnesse.wiki.PageCrawler;
+import fitnesse.wiki.PageData;
+import fitnesse.wiki.PathParser;
+import fitnesse.wiki.WikiPage;
+import fitnesse.wiki.WikiPagePath;
 import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import static util.RegexTestCase.*;
 import util.XmlUtil;
+
+import java.io.File;
+import java.io.FileInputStream;
 
 public class SuiteResponderTest {
   private MockRequest request;
@@ -52,7 +68,7 @@ public class SuiteResponderTest {
     responder.turnOffChunkingForTests();
     responder.setFastTest(true);
     responder.page = suite;
-    context = new FitNesseContext(root);
+    context = FitNesseUtil.makeTestContext(root);
 
     receiver = new FitSocketReceiver(0, context.socketDealer);
   }
@@ -72,6 +88,7 @@ public class SuiteResponderTest {
   @After
   public void tearDown() throws Exception {
     receiver.close();
+    FitNesseUtil.destroyTestContext();
   }
 
   private String runSuite() throws Exception {
@@ -244,7 +261,40 @@ public class SuiteResponderTest {
     assertHasRegexp("#TestTwo", results);
     assertHasRegexp("#TestThree", results);
   }
+  
 
+  @Test
+  public void exculdeSuiteQuery() throws Exception {
+    addTestPagesWithSuiteProperty();
+    request.setQueryString("excludeSuiteFilter=foo");
+    String results = runSuite();
+    assertHasRegexp("#TestOne", results);
+    assertDoesntHaveRegexp("#TestTwo", results);
+    assertHasRegexp("#TestThree", results);
+  }
+
+  
+  @Test
+  public void testFirstTest() throws Exception {
+    addTestPagesWithSuiteProperty();
+    request.setQueryString("firstTest=TestThree");
+    String results = runSuite();
+    assertDoesntHaveRegexp("#TestOne", results);
+    assertHasRegexp("#TestTwo", results);
+    assertHasRegexp("#TestThree", results);
+  }
+
+  @Test
+  public void testFirstTestWholePath() throws Exception {
+    addTestPagesWithSuiteProperty();
+    request.setQueryString("firstTest=SuitePage.TestThree");
+    String results = runSuite();
+    assertDoesntHaveRegexp("#TestOne", results);
+    assertHasRegexp("#TestTwo", results);
+    assertHasRegexp("#TestThree", results);
+  }
+
+  
   @Test
   public void testTagsShouldBeInheritedFromSuite() throws Exception {
     PageData suiteData = suite.getData();
@@ -283,7 +333,7 @@ public class SuiteResponderTest {
     request.addInput("format", "xml");
     addTestToSuite("SlimTest", simpleSlimDecisionTable);
     String results = runSuite();
-    Document testResultsDocument = TestResponderTest.getXmlDocumentFromResults(results);
+    Document testResultsDocument = getXmlDocumentFromResults(results);
     Element testResultsElement = testResultsDocument.getDocumentElement();
     assertEquals("testResults", testResultsElement.getNodeName());
     NodeList resultList = testResultsElement.getElementsByTagName("result");
@@ -294,19 +344,41 @@ public class SuiteResponderTest {
       testResult = (Element) resultList.item(elementIndex);
       String pageName = XmlUtil.getTextValue(testResult, "relativePageName");
       if ("SlimTest".equals(pageName)) {
-        TestResponderTest.assertCounts(testResult, "2", "0", "0", "0");
+        assertCounts(testResult, "2", "0", "0", "0");
         assertSubString("DT:fitnesse.slim.test.TestSlim", XmlUtil.getTextValue(testResult, "content"));
         Element instructions = XmlUtil.getElementByTagName(testResult, "instructions");
         assertTrue(instructions != null);
       } else if ("TestOne".equals(pageName)) {
-        TestResponderTest.assertCounts(testResult, "1", "0", "0", "0");
+        assertCounts(testResult, "1", "0", "0", "0");
         assertSubString("PassFixture", XmlUtil.getTextValue(testResult, "content"));
       } else {
         fail(pageName);
       }
     }
     Element finalCounts = XmlUtil.getElementByTagName(testResultsElement, "finalCounts");
-    TestResponderTest.assertCounts(finalCounts, "2", "0", "0", "0");
+    assertCounts(finalCounts, "2", "0", "0", "0");
+  }
+
+  @Test
+  public void normalSuiteRunProducesTestResultFile() throws Exception {
+    context.shouldCollectHistory = true;
+    TestSummary counts = new TestSummary(2,0,0,0);
+    XmlFormatter.setTestTime("12/5/2008 01:19:00");
+    String resultsFileName = String.format("%s/SuitePage/20081205011900_%d_%d_%d_%d.xml",
+      context.getTestHistoryDirectory(), counts.getRight(), counts.getWrong(), counts.getIgnores(), counts.getExceptions());
+    File xmlResultsFile = new File(resultsFileName);
+
+    if (xmlResultsFile.exists())
+      xmlResultsFile.delete();
+
+    addTestToSuite("SlimTest", simpleSlimDecisionTable);
+    runSuite();
+
+    assertTrue(resultsFileName, xmlResultsFile.exists());
+    FileInputStream xmlResultsStream = new FileInputStream(xmlResultsFile);
+    XmlUtil.newDocument(xmlResultsStream);
+    xmlResultsStream.close();
+    xmlResultsFile.delete();
   }
 
   @Test
@@ -314,7 +386,7 @@ public class SuiteResponderTest {
     request.setResource("SuitePage.TestOne");
     request.addInput("format", "xml");
     String results = runSuite();
-    Document testResultsDocument = TestResponderTest.getXmlDocumentFromResults(results);
+    Document testResultsDocument = getXmlDocumentFromResults(results);
     Element testResultsElement = testResultsDocument.getDocumentElement();
     assertEquals("testResults", testResultsElement.getNodeName());
     NodeList resultList = testResultsElement.getElementsByTagName("result");

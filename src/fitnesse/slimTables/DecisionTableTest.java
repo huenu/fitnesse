@@ -80,7 +80,8 @@ public class DecisionTableTest {
     assertEquals(expectedInstructions, instructions);
     Map<String, Object> pseudoResults = SlimClient.resultToMap(
       list(
-        list("decisionTable_id_0", "OK")
+        list("decisionTable_id_0", "OK"),
+        list("decisionTable_id_1", "OK")
       )
     );
     testContext.evaluateExpectations(pseudoResults);
@@ -131,7 +132,7 @@ public class DecisionTableTest {
     }
     assertEquals(functionsInOrder.length, counters.size());
     for (int i=0; i<functionsInOrder.length; i++)
-      assertEquals(functionsInOrder[i], i, counters.get(functionsInOrder[i]));
+      assertEquals(functionsInOrder[i], i, (int)counters.get(functionsInOrder[i]));
   }
 
 
@@ -165,6 +166,7 @@ public class DecisionTableTest {
     Map<String, Object> pseudoResults = SlimClient.resultToMap(
       list(
         list("decisionTable_id_0", "OK"),
+        list("decisionTable_id_1", VoidConverter.VOID_TAG), 
         list("decisionTable_id_2", VoidConverter.VOID_TAG), //reset
         list("decisionTable_id_3", VoidConverter.VOID_TAG), //set
         list("decisionTable_id_4", VoidConverter.VOID_TAG), //execute
@@ -194,6 +196,7 @@ public class DecisionTableTest {
     Map<String, Object> pseudoResults = SlimClient.resultToMap(
       list(
         list("decisionTable_id_0", "OK"),
+        list("decisionTable_id_1", VoidConverter.VOID_TAG), 
         list("decisionTable_id_2", VoidConverter.VOID_TAG), //reset
         list("decisionTable_id_3", VoidConverter.VOID_TAG), //set
         list("decisionTable_id_4", VoidConverter.VOID_TAG), //execute

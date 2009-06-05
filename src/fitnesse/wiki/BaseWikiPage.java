@@ -102,11 +102,11 @@ public abstract class BaseWikiPage implements WikiPage {
   }
 
   public WikiPage getHeaderPage() throws Exception {
-    return PageCrawlerImpl.getInheritedPage("PageHeader", this);
+    return PageCrawlerImpl.getClosestInheritedPage("PageHeader", this);
   }
 
   public WikiPage getFooterPage() throws Exception {
-    return PageCrawlerImpl.getInheritedPage("PageFooter", this);
+    return PageCrawlerImpl.getClosestInheritedPage("PageFooter", this);
   }
 
   public List<WikiPageAction> getActions() throws Exception {
@@ -136,6 +136,7 @@ public abstract class BaseWikiPage implements WikiPage {
     addActionForAttribute("Versions", pageData, localOrRemotePageName, newWindowIfRemote, null, null, actions);
     addActionForAttribute("Recent Changes", pageData, "/RecentChanges", newWindowIfRemote, "", "", actions);
     addAction("User Guide", ".FitNesse.UserGuide", newWindowIfRemote, "", "", actions);
+    addAction("Test History", "?testHistory", newWindowIfRemote, "", "", actions);
     return actions;
   }
 

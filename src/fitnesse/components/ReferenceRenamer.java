@@ -17,7 +17,7 @@ import fitnesse.wikitext.widgets.PreformattedWidget;
 import fitnesse.wikitext.widgets.WidgetRoot;
 import fitnesse.wikitext.widgets.WikiWordWidget;
 
-public abstract class ReferenceRenamer implements FitNesseTraversalListener {
+public abstract class ReferenceRenamer implements TraversalListener {
   protected WikiPage root;
 
   public ReferenceRenamer(WikiPage root) {
@@ -44,6 +44,7 @@ public abstract class ReferenceRenamer implements FitNesseTraversalListener {
 
   protected abstract WidgetVisitor getVisitor();
 
+  @SuppressWarnings("unchecked")
   public static WidgetBuilder referenceModifyingWidgetBuilder = new WidgetBuilder(new Class[]{
     WikiWordWidget.class,
     LiteralWidget.class,
